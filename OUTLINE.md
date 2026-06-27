@@ -24,7 +24,7 @@ O objetivo é criar um editor de texto estilo TUI (Text User Interface) focado e
 - **Passo 3**: Implementação do sistema de CLI e Configuração.
 - **Passo 4**: Criação do layout visual básico com Tview.
 - **Passo 5**: Documentação e automação de build.
-- **Passo 6**: Versionamento 4.0.1, build ID hexadecimal e menus interativos (File/Help).
+- **Passo 6**: Versionamento 4.0.3, build ID hexadecimal e menus interativos (File/Help).
 - **Passo 7**: Redesign visual dos menus para o estilo Turbo Vision (cinza, branco, preto e vermelho).
 - **Passo 8**: Ajuste fino das cores e bordas dos menus (fundo cinza, letras brancas, bordas brancas).
 - **Passo 9**: Implementação do Desktop quadriculado, sombras nas janelas e estilo Turbo Pascal 7.0 exato.
@@ -32,9 +32,13 @@ O objetivo é criar um editor de texto estilo TUI (Text User Interface) focado e
 - **Passo 11**: Simplificação dos menus e implementação do sistema de teclas de atalho (Alt+Letra e Hotkeys em dropdowns) no estilo Turbo Vision.
 - **Passo 12**: Introdução da janela de edição customizada no startup, com moldura dupla, título centralizado, número da janela e barras de rolagem horizontal/vertical renderizadas manualmente.
 - **Passo 13**: Padronização de temas para paleta VGA explícita, com `default` = Borland blue (MS-DOS/Turbo) e `blue` = NC-style com menu/status ciano.
+- **Passo 14**: Implementação do `Dialogo OK` reutilizável, com helper de centralização e suporte a botão customizável (label/hotkey/callback).
+- **Passo 15**: Criação do componente `turboButton` e padronização visual dos botões com sombra estilo Turbo Vision.
+- **Passo 16**: Adição de modos configuráveis de sombra (`shadowModeTurboClassic` e `shadowModeFlat`) para alternância rápida por tema/diálogo.
 
 ## Instruções para IAs Futuras
 
 - **Preservação de Idiomas Go**: Utilize sempre Go 1.26+, preferindo `any`, `slices.Contains`, `errors.Is` e outras modernizações.
 - **Consistência Visual**: Mantenha a paleta VGA clássica definida em `internal/tui/theme.go`, preservando os perfis `default` (Borland blue) e `blue` (NC-style).
+- **Consistência de Componentes**: Reutilize `dialogoOK` e `turboButton` para novos fluxos, evitando duplicação de desenho de diálogo/botão.
 - **Menus e Atalhos**: Use sempre o sistema de `SetInputCapture` para garantir que atalhos de teclado (Alt+Hotkey, F10) funcionem em toda a aplicação. No dropdown, as hotkeys devem funcionar sem Alt.

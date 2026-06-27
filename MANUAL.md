@@ -52,6 +52,20 @@ Ao iniciar, o programa cria automaticamente a primeira janela de edição (janel
 3. **Barra de Status (Base)**: Exibe informações sobre o cursor, o arquivo aberto e atalhos rápidos.
 4. **Barras de Rolagem (Moldura da Janela)**: Horizontal na base da janela e vertical na lateral direita, com setas, trilho quadriculado e cursor em bloco.
 
+### Diálogos
+
+- O projeto possui o componente reutilizável **Dialogo OK** (`dialogoOK`) para janelas de confirmação/aviso.
+- O helper `showDialogoOKCentered(...)` centraliza o diálogo na tela inteira com foco automático.
+- O botão principal do diálogo pode ser configurado via `SetButton(label, hotkey, callback)`.
+
+### Botões (estilo Turbo)
+
+- O componente `turboButton` é reutilizável e usado pelo `Dialogo OK`.
+- Modos de sombra suportados:
+  - `shadowModeTurboClassic`: sombra clássica estilo Turbo Vision (`[BOTAO]▄` + linha inferior deslocada).
+  - `shadowModeFlat`: sombra inferior reta para estilo mais discreto.
+- A troca rápida por diálogo pode ser feita com `SetButtonShadowMode(...)`.
+
 ### Temas de Cores
 
 - **`default`**: VGA Borland blue (MS-DOS/Turbo style).

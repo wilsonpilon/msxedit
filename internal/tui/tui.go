@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"fmt"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -238,49 +236,8 @@ func (a *App) showHelpMenu() {
 }
 
 func (a *App) showAbout() {
-	text := fmt.Sprintf("\nMSXEdit\n\nVersão %s\n\nCopyright (c) 2026 by\nJunie AI Editor", a.Version)
-
-	// Criar um modal personalizado para ter o estilo monocromático
-	view := tview.NewTextView().
-		SetTextAlign(tview.AlignCenter).
-		SetDynamicColors(false).
-		SetText(text)
-	view.SetBackgroundColor(a.Theme.PopupBg)
-	view.SetTextColor(a.Theme.PopupFg)
-
-	okBtn := tview.NewButton("  OK  ").SetSelectedFunc(func() {
-		a.Pages.RemovePage("about")
-		a.Application.SetFocus(a.Editor)
-	})
-	okBtn.SetBackgroundColor(a.Theme.PopupSelectedBg)
-	okBtn.SetLabelColor(a.Theme.PopupSelectedFg)
-
-	form := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(view, 7, 1, false).
-		AddItem(tview.NewFlex().
-			AddItem(nil, 0, 1, false).
-			AddItem(okBtn, 8, 1, true).
-			AddItem(nil, 0, 1, false), 1, 0, true)
-	form.SetBorder(true).SetTitle(" About ").SetBorderColor(a.Theme.PopupBorderFg)
-	form.SetBackgroundColor(a.Theme.PopupBg)
-
-	// Sombra
-	modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		shadow := tview.NewBox().SetBackgroundColor(a.Theme.ShadowBg)
-		return tview.NewFlex().
-			AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 0, 1, false).
-				AddItem(tview.NewFlex().
-					AddItem(p, width, 0, true).
-					AddItem(shadow, 1, 0, false), height, 0, true).
-				AddItem(tview.NewFlex().
-					AddItem(nil, 1, 0, false).
-					AddItem(shadow, width, 0, false), 1, 0, false).
-				AddItem(nil, 0, 1, false), width+1, 1, true).
-			AddItem(nil, 0, 1, false)
-	}
-
-	a.Pages.AddPage("about", modal(form, 40, 10), true, true)
-	a.Application.SetFocus(okBtn)
+	dialog := newAboutDialog(a)
+	const dlgW = 40
+	const dlgH = 12
+	showDialogoOKCentered(dialog.dialogoOK, dlgW, dlgH)
 }

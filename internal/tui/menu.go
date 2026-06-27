@@ -123,7 +123,25 @@ func defaultMenus(app *App) []MenuDefinition {
 		{Title: "&Tools", Items: []MenuEntry{{Label: "No options yet"}}},
 		{Title: "&Options", Items: []MenuEntry{{Label: "No options yet"}}},
 		{Title: "&Window", Items: []MenuEntry{{Label: "No options yet"}}},
-		{Title: "&Help", Items: []MenuEntry{{Label: "&About", Action: func() { app.showAbout() }}}},
+		{
+			Title: "&Help",
+			Items: []MenuEntry{
+				{Label: "&Contents"},
+				{Label: "&Index", Shortcut: "[Shift]+[F1]"},
+				{Label: "&Topc search", Shortcut: "[Ctrl]+[F1]"},
+				{Label: "&Previous topic", Shortcut: "[Alt]+[F1]"},
+				{Label: "Using &help"},
+				{Label: "&Files..."},
+				{Separator: true},
+				{Label: "Compiler &directives"},
+				{Label: "&Reserved words"},
+				{Label: "Standard &units"},
+				{Label: "MSX Basic &Language"},
+				{Label: "&Error messages"},
+				{Separator: true},
+				{Label: "&About...", Action: func() { app.showAbout() }},
+			},
+		},
 	}
 }
 

@@ -7,7 +7,7 @@ Este arquivo contém um resumo das opções de linha de comando e chaves de conf
 | Opção | Descrição |
 |-------|-----------|
 | `--help` | Exibe a mensagem de ajuda com todas as opções disponíveis. |
-| `--version` | Exibe a versão corrente do programa (atualmente 4.0.1). |
+| `--version` | Exibe a versão corrente do programa (atualmente 4.0.3). |
 | `--local` | Força o uso do arquivo `msxedit.json` no diretório atual em vez do diretório global. |
 | `--theme <nome>` | Define o tema de cores da interface (ex: `default`, `blue`). |
 | `--tabsize <n>` | Define o tamanho do caractere Tab (ex: 4 ou 8). |
@@ -35,6 +35,15 @@ As seguintes chaves podem ser configuradas no arquivo JSON:
 
 - **`default`**: VGA Borland blue (estilo MS-DOS/Turbo).
 - **`blue`**: VGA NC-style (Norton Commander), com barra superior e status em ciano.
+
+## Componentes Internos de UI
+
+- **`dialogoOK`**: Diálogo reutilizável com botão configurável.
+  - `SetButton(label, hotkey, callback)`
+  - `SetButtonShadowMode(mode)`
+  - `showDialogoOKCentered(dialog, width, height)`
+- **`turboButton`**: Botão visual estilo Turbo Vision.
+  - Modos de sombra: `shadowModeTurboClassic`, `shadowModeFlat`
 
 ## Linguagens Suportadas para Syntax Highlight
 
