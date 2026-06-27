@@ -8,14 +8,16 @@ import (
 )
 
 type App struct {
-	Application *tview.Application
-	Pages       *tview.Pages
-	Editor      *tview.TextArea
-	Menu        *tview.List
-	StatusBar   *tview.TextView
-	Version     string
-	Build       string
-	Theme       Theme
+	Application  *tview.Application
+	Pages        *tview.Pages
+	Editor       *tview.TextArea
+	Editors      []*editorWindow
+	ActiveEditor int
+	Menu         *tview.List
+	StatusBar    *tview.TextView
+	Version      string
+	Build        string
+	Theme        Theme
 }
 
 type checkerboardDesktop struct {
@@ -62,13 +64,14 @@ func (a *App) Run(filePath string) error {
 	menu := newMenuController(a, menuBar)
 	menu.renderBar()
 
-	// Janela de Edicao central
-	a.Editor = tview.NewTextArea()
-	a.Editor.SetPlaceholder("Digite seu codigo aqui...")
-	a.Editor.SetTitle(" Sem Nome ").SetBorder(true)
-	a.Editor.SetBackgroundColor(a.Theme.EditorBg)
-	a.Editor.SetBorderColor(a.Theme.EditorBorderFg)
-	a.Editor.SetBorderStyle(tcell.StyleDefault.Foreground(a.Theme.EditorBorderFg).Background(a.Theme.EditorBg))
+	name := "Sem Nome"
+	if filePath != "" {
+		name = filePath
+	}
+	editorWin := newEditorWindow(a.Theme, name, 1)
+	a.Editors = []*editorWindow{editorWin}
+	a.ActiveEditor = 0
+	a.Editor = editorWin.editor
 
 	// Barra de Status inferior
 	a.StatusBar = tview.NewTextView().
@@ -81,10 +84,15 @@ func (a *App) Run(filePath string) error {
 	pages := tview.NewPages().
 		AddPage("desktop", desktop, true, true)
 
-	if filePath != "" {
-		a.Editor.SetTitle(fmt.Sprintf(" %s ", filePath))
-		pages.AddPage("editor", a.Editor, true, true)
-	}
+	editorHost := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 1, 0, false).
+		AddItem(tview.NewFlex().
+			AddItem(nil, 2, 0, false).
+			AddItem(editorWin, 0, 1, true).
+			AddItem(nil, 2, 0, false), 0, 1, true).
+		AddItem(nil, 1, 0, false)
+
+	pages.AddPage("editor", editorHost, true, true)
 
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
@@ -101,6 +109,7 @@ func (a *App) Run(filePath string) error {
 		return event
 	})
 
+	a.Application.SetFocus(editorWin)
 	return a.Application.SetRoot(a.Pages, true).Run()
 }
 

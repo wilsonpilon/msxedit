@@ -2,6 +2,25 @@ package tui
 
 import "github.com/gdamore/tcell/v2"
 
+var (
+	vgaBlack      = tcell.NewRGBColor(0, 0, 0)
+	vgaBlue       = tcell.NewRGBColor(0, 0, 170)
+	vgaGreen      = tcell.NewRGBColor(0, 170, 0)
+	vgaCyan       = tcell.NewRGBColor(0, 170, 170)
+	vgaRed        = tcell.NewRGBColor(170, 0, 0)
+	vgaMagenta    = tcell.NewRGBColor(170, 0, 170)
+	vgaBrown      = tcell.NewRGBColor(170, 85, 0)
+	vgaLightGray  = tcell.NewRGBColor(170, 170, 170)
+	vgaDarkGray   = tcell.NewRGBColor(85, 85, 85)
+	vgaLightBlue  = tcell.NewRGBColor(85, 85, 255)
+	vgaLightGreen = tcell.NewRGBColor(85, 255, 85)
+	vgaLightCyan  = tcell.NewRGBColor(85, 255, 255)
+	vgaLightRed   = tcell.NewRGBColor(255, 85, 85)
+	vgaLightMag   = tcell.NewRGBColor(255, 85, 255)
+	vgaYellow     = tcell.NewRGBColor(255, 255, 85)
+	vgaWhite      = tcell.NewRGBColor(255, 255, 255)
+)
+
 // Theme contém todas as cores da interface gráfica.
 type Theme struct {
 	Name string
@@ -45,62 +64,62 @@ func GetTheme(name string) Theme {
 	}
 }
 
-// defaultTheme – estilo monocromático cinza, inspirado em Norton Commander / Turbo Vision.
+// defaultTheme - VGA Borland blue (MS-DOS/Turbo style) como tema padrao.
 func defaultTheme() Theme {
 	return Theme{
 		Name: "default",
 
-		DesktopBg:   tcell.ColorNavy,
-		DesktopFg:   tcell.ColorGray,
+		DesktopBg:   vgaBlue,
+		DesktopFg:   vgaLightBlue,
 		DesktopChar: '░',
 
-		MenuBarBg:    tcell.ColorSilver,
-		MenuBarFg:    tcell.ColorBlack,
-		MenuCursorBg: tcell.ColorGreen,
-		MenuCursorFg: tcell.ColorBlack,
+		MenuBarBg:    vgaLightGray,
+		MenuBarFg:    vgaBlack,
+		MenuCursorBg: vgaGreen,
+		MenuCursorFg: vgaBlack,
 
-		StatusBarBg: tcell.ColorSilver,
-		StatusBarFg: tcell.ColorBlack,
+		StatusBarBg: vgaLightGray,
+		StatusBarFg: vgaBlack,
 
-		EditorBg:       tcell.ColorBlack,
-		EditorFg:       tcell.ColorSilver,
-		EditorBorderFg: tcell.ColorWhite,
+		EditorBg:       vgaBlue,
+		EditorFg:       vgaWhite,
+		EditorBorderFg: vgaWhite,
 
-		PopupBg:         tcell.ColorSilver,
-		PopupFg:         tcell.ColorBlack,
-		PopupBorderFg:   tcell.ColorBlack,
-		PopupSelectedBg: tcell.ColorBlack,
-		PopupSelectedFg: tcell.ColorSilver,
-		ShadowBg:        tcell.ColorGray,
+		PopupBg:         vgaLightGray,
+		PopupFg:         vgaBlack,
+		PopupBorderFg:   vgaBlack,
+		PopupSelectedBg: vgaBlack,
+		PopupSelectedFg: vgaLightGray,
+		ShadowBg:        vgaDarkGray,
 	}
 }
 
-// blueTheme – estilo azul clássico tipo Norton Commander.
+// blueTheme - VGA NC-style (Norton Commander), com barra superior e status em ciano.
 func blueTheme() Theme {
 	return Theme{
 		Name: "blue",
 
-		DesktopBg:   tcell.ColorNavy,
-		DesktopFg:   tcell.ColorBlue,
+		DesktopBg:   vgaBlue,
+		DesktopFg:   vgaLightBlue,
 		DesktopChar: '░',
 
-		MenuBarBg:    tcell.ColorTeal,
-		MenuBarFg:    tcell.ColorWhite,
-		MenuCursorBg: tcell.ColorGreen,
-		MenuCursorFg: tcell.ColorBlack,
+		MenuBarBg:    vgaCyan,
+		MenuBarFg:    vgaWhite,
+		MenuCursorBg: vgaGreen,
+		MenuCursorFg: vgaBlack,
 
-		StatusBarBg: tcell.ColorTeal,
-		StatusBarFg: tcell.ColorWhite,
+		StatusBarBg: vgaCyan,
+		StatusBarFg: vgaWhite,
 
-		EditorBg:       tcell.ColorNavy,
-		EditorFg:       tcell.ColorWhite,
-		EditorBorderFg: tcell.ColorWhite,
+		EditorBg:       vgaBlue,
+		EditorFg:       vgaWhite,
+		EditorBorderFg: vgaWhite,
 
-		PopupBg:         tcell.ColorSilver,
-		PopupFg:         tcell.ColorBlack,
-		PopupBorderFg:   tcell.ColorBlack,
-		PopupSelectedBg: tcell.ColorNavy,
-		PopupSelectedFg: tcell.ColorWhite,
-		ShadowBg:        tcell.ColorBlack,
+		PopupBg:         vgaLightGray,
+		PopupFg:         vgaBlack,
+		PopupBorderFg:   vgaBlack,
+		PopupSelectedBg: vgaBlue,
+		PopupSelectedFg: vgaWhite,
+		ShadowBg:        vgaBlack,
 	}
 }

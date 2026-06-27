@@ -30,9 +30,11 @@ O objetivo é criar um editor de texto estilo TUI (Text User Interface) focado e
 - **Passo 9**: Implementação do Desktop quadriculado, sombras nas janelas e estilo Turbo Pascal 7.0 exato.
 - **Passo 10**: Redesign total para estilo monocromático (Preto/Cinza/Branco), removendo cores e fundos destacados para um visual limpo.
 - **Passo 11**: Simplificação dos menus e implementação do sistema de teclas de atalho (Alt+Letra e Hotkeys em dropdowns) no estilo Turbo Vision.
+- **Passo 12**: Introdução da janela de edição customizada no startup, com moldura dupla, título centralizado, número da janela e barras de rolagem horizontal/vertical renderizadas manualmente.
+- **Passo 13**: Padronização de temas para paleta VGA explícita, com `default` = Borland blue (MS-DOS/Turbo) e `blue` = NC-style com menu/status ciano.
 
 ## Instruções para IAs Futuras
 
 - **Preservação de Idiomas Go**: Utilize sempre Go 1.26+, preferindo `any`, `slices.Contains`, `errors.Is` e outras modernizações.
-- **Consistência Visual**: Mantenha o estilo monocromático (Preto/Cinza/Branco) com destaques pontuais em vermelho para teclas de atalho, focando em clareza e fidelidade ao estilo Turbo Vision.
+- **Consistência Visual**: Mantenha a paleta VGA clássica definida em `internal/tui/theme.go`, preservando os perfis `default` (Borland blue) e `blue` (NC-style).
 - **Menus e Atalhos**: Use sempre o sistema de `SetInputCapture` para garantir que atalhos de teclado (Alt+Hotkey, F10) funcionem em toda a aplicação. No dropdown, as hotkeys devem funcionar sem Alt.
