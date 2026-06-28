@@ -136,6 +136,35 @@ func (d *dialogoOK) activateButton() {
 	d.close()
 }
 
+func (d *dialogoOK) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (bool, tview.Primitive) {
+	return func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (bool, tview.Primitive) {
+		mx, my := event.Position()
+		x, y, width, height := d.GetRect()
+
+		// Fora dos limites
+		if mx < x || mx >= x+width || my < y || my >= y+height {
+			return false, nil
+		}
+
+		if action == tview.MouseLeftClick {
+			setFocus(d)
+			if my == y && mx >= x+2 && mx <= x+4 {
+				d.close()
+				return true, nil
+			}
+			btnWidth := d.okButton.width()
+			btnX := x + (width-btnWidth)/2
+			btnY := y + height - 3
+			// +1 because the button label starts one col to the right of btnX
+			if my == btnY && mx >= btnX && mx < btnX+btnWidth {
+				d.activateButton()
+			}
+			return true, nil
+		}
+		return false, nil
+	}
+}
+
 func (d *dialogoOK) close() {
 	d.app.Pages.RemovePage(d.pageName)
 	if d.onClose != nil {

@@ -1,17 +1,27 @@
 # Referência de Opções - MSXEdit
 
-Este arquivo contém um resumo das opções de linha de comando e chaves de configuração suportadas pelo MSXEdit.
+Este arquivo resume as opções de linha de comando, chaves de configuração e comportamentos visíveis da release `4.0.7`.
 
 ## Opções de Linha de Comando
 
 | Opção | Descrição |
 |-------|-----------|
 | `--help` | Exibe a mensagem de ajuda com todas as opções disponíveis. |
-| `--version` | Exibe a versão corrente do programa (atualmente 4.0.3). |
+| `--version` | Exibe a versão corrente do programa (atualmente `4.0.7`) com o `Build ID` gerado na execução. |
 | `--local` | Força o uso do arquivo `msxedit.json` no diretório atual em vez do diretório global. |
-| `--theme <nome>` | Define o tema de cores da interface (ex: `default`, `blue`). |
+| `--theme <nome>` | Define o tema de cores da interface (`default` ou `blue`). |
 | `--tabsize <n>` | Define o tamanho do caractere Tab (ex: 4 ou 8). |
-| `--no-highlight` | Desativa o realce de sintaxe (Syntax Highlighting). |
+| `--no-highlight` | Desativa a preferência de realce de sintaxe. A infraestrutura de configuração já existe, mas o realce visual ainda está em evolução. |
+
+### Argumento posicional
+
+Além das flags, o programa aceita um argumento opcional com caminho de arquivo:
+
+```text
+msxedit [opções] [arquivo]
+```
+
+Quando informado, o nome do arquivo é usado no título da primeira janela de edição.
 
 ## Configurações (msxedit.json)
 
@@ -28,13 +38,29 @@ As seguintes chaves podem ser configuradas no arquivo JSON:
 
 - **theme**: String. Nome do tema de cores (`default` ou `blue`).
 - **tab_size**: Integer. Espaços por Tab.
-- **show_line_numbers**: Boolean. Se verdadeiro, exibe números de linha na margem esquerda.
-- **highlight**: Boolean. Se verdadeiro, habilita syntax highlight para linguagens suportadas.
+- **show_line_numbers**: Boolean. Preferência já persistida em configuração, mas a margem visual com números de linha ainda não é desenhada na UI atual.
+- **highlight**: Boolean. Preferência persistida para o pipeline de realce de sintaxe, ainda não finalizado no editor atual.
+
+### Ordem de precedência
+
+1. Flags de linha de comando
+2. Configuração local (`--local`)
+3. Configuração global do usuário
+4. Padrões internos
 
 ## Temas de Cores Disponíveis
 
 - **`default`**: VGA Borland blue (estilo MS-DOS/Turbo).
 - **`blue`**: VGA NC-style (Norton Commander), com barra superior e status em ciano.
+
+Ambos os temas aplicam paleta explícita para:
+
+- desktop quadriculado
+- barra de menus
+- barra de status
+- janela do editor
+- popups e diálogos
+- janela de `Help`
 
 ## Componentes Internos de UI
 
@@ -45,9 +71,58 @@ As seguintes chaves podem ser configuradas no arquivo JSON:
 - **`turboButton`**: Botão visual estilo Turbo Vision.
   - Modos de sombra: `shadowModeTurboClassic`, `shadowModeFlat`
 
-## Linguagens Suportadas para Syntax Highlight
+## Menus e Atalhos Atuais
 
-- **MSX-BASIC** (.BAS)
-- **Turbo Pascal 3** (.PAS)
-- **MSX-C 1.2** (.C, .H)
-- **SDCC 4 (MSXgl)** (.C, .H)
+### Menus superiores
+
+- `File`
+- `Edit`
+- `Search`
+- `Run`
+- `Compile`
+- `Debug`
+- `Tools`
+- `Options`
+- `Window`
+- `Help`
+
+### Menus com ação efetiva hoje
+
+- **`File`**: contém a ação `Exit`
+- **`Help`**: contém `Contents` e `About`
+
+Os demais menus existem como estrutura visual e de navegação, mas ainda exibem `No options yet`.
+
+### Hotkeys implementadas
+
+- `F1`: abre o `Help`
+- `Alt+F1`: volta ao tópico anterior no `Help`
+- `Alt+Q`: fallback para voltar no `Help`
+- `F10`: abre o menu `File`
+- `Alt+X`: sai da aplicação
+- `Alt+F/E/S/R/C/D/T/O/W/H`: abre o menu correspondente
+
+## Janela de Help
+
+O sistema de ajuda:
+
+- carrega tópicos a partir de `HELP.md`
+- usa fallback interno se o markdown não estiver disponível
+- suporta links entre tópicos
+- mostra breadcrumb de navegação
+- suporta teclado e mouse
+
+Controles principais dentro do `Help`:
+
+- `Tab / Shift+Tab`: navegar entre links
+- `Enter`: seguir link
+- `Esc`: fechar
+- `Setas`, `PgUp`, `PgDn`, `Home`, `End`: rolagem e navegação
+
+## Recursos em andamento
+
+- syntax highlighting efetivo no editor
+- fluxo de `Open` / `Save`
+- ações de `Compile` / `Make`
+- parser de arquivo BASIC tokenizado (`.BAS` binário)
+- renderização de números de linha

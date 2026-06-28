@@ -14,6 +14,7 @@ type editorWindow struct {
 	theme    Theme
 	fileName string
 	number   int
+	onClose  func()
 }
 
 func newEditorWindow(theme Theme, fileName string, number int) *editorWindow {
@@ -31,6 +32,7 @@ func newEditorWindow(theme Theme, fileName string, number int) *editorWindow {
 		theme:    theme,
 		fileName: fileName,
 		number:   number,
+		onClose:  nil,
 	}
 }
 
@@ -181,7 +183,23 @@ func (w *editorWindow) Blur() {
 }
 
 func (w *editorWindow) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (bool, tview.Primitive) {
-	return w.editor.MouseHandler()
+	base := w.editor.MouseHandler()
+	return func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (bool, tview.Primitive) {
+		if action == tview.MouseLeftClick {
+			mx, my := event.Position()
+			x, y, width, _ := w.GetRect()
+			if my == y && mx >= x+2 && mx <= x+4 {
+				if w.onClose != nil {
+					w.onClose()
+					return true, nil
+				}
+			}
+			if mx >= x && mx < x+width {
+				setFocus(w)
+			}
+		}
+		return base(action, event, setFocus)
+	}
 }
 
 func (w *editorWindow) PasteHandler() func(text string, setFocus func(p tview.Primitive)) {

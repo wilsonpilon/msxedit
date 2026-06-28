@@ -52,6 +52,13 @@ type Theme struct {
 	PopupSelectedBg tcell.Color
 	PopupSelectedFg tcell.Color
 	ShadowBg        tcell.Color
+
+	// Janela de Help
+	HelpBg        tcell.Color
+	HelpFg        tcell.Color
+	HelpBorderFg  tcell.Color
+	HelpLinkFg    tcell.Color
+	HelpSelectedFg tcell.Color
 }
 
 // GetTheme retorna o tema pelo nome. Caso não encontrado, retorna o tema padrão.
@@ -91,6 +98,12 @@ func defaultTheme() Theme {
 		PopupSelectedBg: vgaBlack,
 		PopupSelectedFg: vgaLightGray,
 		ShadowBg:        vgaDarkGray,
+
+		HelpBg:         vgaCyan,
+		HelpFg:         vgaBlack,
+		HelpBorderFg:   vgaWhite,
+		HelpLinkFg:     vgaYellow,
+		HelpSelectedFg: vgaRed,
 	}
 }
 
@@ -121,5 +134,11 @@ func blueTheme() Theme {
 		PopupSelectedBg: vgaBlue,
 		PopupSelectedFg: vgaWhite,
 		ShadowBg:        vgaBlack,
+
+		HelpBg:         vgaCyan,
+		HelpFg:         vgaBlack,
+		HelpBorderFg:   vgaWhite,
+		HelpLinkFg:     vgaYellow,
+		HelpSelectedFg: vgaRed,
 	}
 }

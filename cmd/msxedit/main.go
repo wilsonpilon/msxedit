@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const Version = "4.0.3"
+const Version = "4.0.7"
 
 func main() {
 	// Gerar Build ID (Hexadecimal do Unix UTC)

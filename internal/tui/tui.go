@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -10,12 +12,15 @@ type App struct {
 	Pages        *tview.Pages
 	Editor       *tview.TextArea
 	Editors      []*editorWindow
+	HelpWindows  []*helpWindow
 	ActiveEditor int
 	Menu         *tview.List
 	StatusBar    *tview.TextView
 	Version      string
 	Build        string
 	Theme        Theme
+	NextWindowID int
+	UsedWindowIDs map[int]bool
 }
 
 type checkerboardDesktop struct {
@@ -43,11 +48,13 @@ func (d *checkerboardDesktop) Draw(screen tcell.Screen) {
 
 func NewApp(version, build string, themeName string) *App {
 	return &App{
-		Application: tview.NewApplication(),
-		Pages:       tview.NewPages(),
-		Version:     version,
-		Build:       build,
-		Theme:       GetTheme(themeName),
+		Application:   tview.NewApplication(),
+		Pages:         tview.NewPages(),
+		Version:       version,
+		Build:         build,
+		Theme:         GetTheme(themeName),
+		NextWindowID:  2,
+		UsedWindowIDs: map[int]bool{1: true}, // ID 1 reservado para o primeiro editor
 	}
 }
 
@@ -67,6 +74,9 @@ func (a *App) Run(filePath string) error {
 		name = filePath
 	}
 	editorWin := newEditorWindow(a.Theme, name, 1)
+	editorWin.onClose = func() {
+		a.Application.Stop()
+	}
 	a.Editors = []*editorWindow{editorWin}
 	a.ActiveEditor = 0
 	a.Editor = editorWin.editor
@@ -101,10 +111,38 @@ func (a *App) Run(filePath string) error {
 
 	// Captura de Teclas (Hotkeys para Menus)
 	a.Application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyF1 && event.Modifiers()&tcell.ModAlt != 0 {
+			if helpWin := a.currentHelpWindow(); helpWin != nil {
+				if helpWin.goBackBreadcrumb() {
+					return nil
+				}
+			}
+		}
+		if event.Key() == tcell.KeyF1 && event.Modifiers() == 0 {
+			a.showHelpWindow()
+			return nil
+		}
 		if menu.handleHotkey(event) {
 			return nil
 		}
 		return event
+	})
+
+	// Habilitar suporte a mouse
+	a.Application.EnableMouse(true)
+
+	// Interceptar cliques na barra de menus (linha 0 da tela)
+	a.Application.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
+		if action == tview.MouseLeftClick {
+			mx, my := event.Position()
+			if my == 0 {
+				if idx := menuClickIndex(menu.menus, mx); idx >= 0 {
+					menu.toggleFromHotkey(idx)
+					return nil, action
+				}
+			}
+		}
+		return event, action
 	})
 
 	a.Application.SetFocus(editorWin)
@@ -175,6 +213,10 @@ func (a *App) showFileMenu() {
 func (a *App) showHelpMenu() {
 	list := tview.NewList().
 		AddItem(" ──────────────────", "", 0, nil).
+		AddItem(" [red]C[-]ontents", "", 0, func() {
+			a.Pages.RemovePage("help_menu")
+			a.showHelpWindow()
+		}).
 		AddItem(" [red]A[-]bout", "", 0, func() {
 			a.Pages.RemovePage("help_menu")
 			a.showAbout()
@@ -199,6 +241,10 @@ func (a *App) showHelpMenu() {
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRune {
 			switch event.Rune() {
+			case 'c', 'C':
+				a.Pages.RemovePage("help_menu")
+				a.showHelpWindow()
+				return nil
 			case 'a', 'A':
 				a.Pages.RemovePage("help_menu")
 				a.showAbout()
@@ -226,7 +272,7 @@ func (a *App) showHelpMenu() {
 			AddItem(nil, 0, 1, false)
 	}
 
-	a.Pages.AddPage("help_menu", modal(list, 24, 4), true, true)
+	a.Pages.AddPage("help_menu", modal(list, 24, 5), true, true)
 	a.Application.SetFocus(list)
 
 	list.SetDoneFunc(func() {
@@ -241,3 +287,68 @@ func (a *App) showAbout() {
 	const dlgH = 12
 	showDialogoOKCentered(dialog.dialogoOK, dlgW, dlgH)
 }
+
+// getNextWindowID retorna o próximo ID de janela disponível
+func (a *App) getNextWindowID() int {
+	// Procura por um ID reutilizável
+	for i := 1; i < a.NextWindowID; i++ {
+		if !a.UsedWindowIDs[i] {
+			a.UsedWindowIDs[i] = true
+			return i
+		}
+	}
+	// Se nenhum ID reutilizável, usa o próximo
+	id := a.NextWindowID
+	a.NextWindowID++
+	a.UsedWindowIDs[id] = true
+	return id
+}
+
+// releaseWindowID marca um ID como disponível para reutilização
+func (a *App) releaseWindowID(id int) {
+	delete(a.UsedWindowIDs, id)
+}
+
+// showHelpWindow abre uma janela de Help
+func (a *App) showHelpWindow() {
+	helpWin := newHelpWindow(a.Theme, a.getNextWindowID())
+	a.HelpWindows = append(a.HelpWindows, helpWin)
+
+	const dlgW = 72
+	const dlgH = 22
+
+	pageName := fmt.Sprintf("help_%d", helpWin.number)
+
+	// Callback para fechar a janela
+	helpWin.onClose = func() {
+		a.Pages.RemovePage(pageName)
+		a.releaseWindowID(helpWin.number)
+		for i, hw := range a.HelpWindows {
+			if hw == helpWin {
+				a.HelpWindows = append(a.HelpWindows[:i], a.HelpWindows[i+1:]...)
+				break
+			}
+		}
+		a.Application.SetFocus(a.Editor)
+	}
+
+	// Layout centralizado (mesmo padrão do showDialogoOKCentered)
+	container := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().
+			AddItem(nil, 0, 1, false).
+			AddItem(helpWin, dlgW, 0, true).
+			AddItem(nil, 0, 1, false), dlgH, 0, true).
+		AddItem(nil, 0, 1, false)
+
+	a.Pages.AddPage(pageName, container, true, true)
+	a.Application.SetFocus(helpWin)
+}
+
+func (a *App) currentHelpWindow() *helpWindow {
+	if len(a.HelpWindows) == 0 {
+		return nil
+	}
+	return a.HelpWindows[len(a.HelpWindows)-1]
+}
+

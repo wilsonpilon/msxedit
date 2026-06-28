@@ -1,31 +1,81 @@
 # MSXEdit
 
-MSXEdit é um editor de textos moderno com alma retrô, projetado para desenvolvedores que trabalham com plataformas clássicas como o MSX, mas preferem o conforto de terminais modernos no Windows ou Linux.
+MSXEdit é um editor TUI com estética retrô, pensado para desenvolvimento em plataformas clássicas como MSX, mas executado em terminais modernos no Windows e Linux.
 
-O editor oferece uma interface baseada em caracteres (TUI) inspirada no clássico Norton Editor e nos ambientes Turbo C++/Turbo Vision da Borland, proporcionando uma experiência produtiva e nostálgica.
+O projeto combina uma base visual inspirada em Turbo Vision, Norton Editor e ferramentas Borland com uma arquitetura Go moderna, priorizando janelas customizadas, temas VGA explícitos e navegação por teclado/mouse.
 
-## Funcionalidades Principais
+## Release atual
 
-- **Syntax Highlighting**: Suporte para MSX-BASIC, Turbo Pascal 3, MSX-C 1.2 e SDCC 4 com MSXgl.
-- **Suporte MSX-BASIC**: Capacidade de carregar e salvar programas em formato ASCII e BASIC tokenizado (.BAS).
-- **Interface TUI**: Menu superior "Top Down", janela de edição central e barra de status inferior.
-- **Janela de Edição Retro**: Primeira janela aberta automaticamente no startup, com moldura dupla branca, título centralizado, identificador de janela e barras de rolagem horizontal/vertical no estilo clássico.
-- **Diálogo OK Reutilizável**: Componente `Dialogo OK` centralizável, com moldura dupla, botão de controle `[■]` no topo e botão principal configurável por label/hotkey/callback.
-- **Botão Turbo Reutilizável**: Componente de botão verde estilo Turbo Vision, com tecla de destaque e sombra configurável (`shadowModeTurboClassic` e `shadowModeFlat`).
-- **Temas VGA**: `default` (VGA Borland blue, estilo MS-DOS/Turbo) e `blue` (VGA NC-style/Norton Commander, com menu e status em ciano).
-- **Multiplataforma**: Executa nativamente em consoles Windows e Linux com suporte a cores e caracteres gráficos.
-- **Configuração Flexível**: Suporte a arquivos de configuração locais ou globais (%APPDATA%) e argumentos de linha de comando.
+- **Versão**: `4.0.7`
+- **Build ID**: gerado dinamicamente em hexadecimal UTC durante a execução/build.
 
-## Ferramentas Utilizadas
+## Novidades da 4.0.7
 
-O projeto é desenvolvido e mantido utilizando as seguintes tecnologias:
+- Janela de `Help` consolidada com carregamento de `HELP.md`, links navegáveis, breadcrumb e fallback interno.
+- Navegação expandida por teclado e mouse (menus superiores, links do `Help`, rolagem e fechamento por `[■]`).
+- Componentes visuais reutilizáveis (`dialogoOK` e `turboButton`) padronizados para o estilo Turbo Vision.
+- Documentação revisada para separar claramente recursos já entregues dos itens ainda em evolução.
 
-- **Linguagem Go (Golang)**: Versão 1.26, aproveitando recursos modernos de concorrência e tipagem.
-- **Tview & Tcell**: Bibliotecas robustas para criação de interfaces de terminal ricas.
-- **PowerShell**: Para scripts de build e automação de tarefas.
-- **Git**: Controle de versão.
-- **GPL 3.0**: Licenciamento de código aberto.
+## O que já está implementado
 
-## Como Começar
+- **Janela de edição retrô no startup**: a aplicação abre automaticamente a primeira janela de edição, com moldura dupla, botão `[■]`, título centralizado, identificador numérico e barras de rolagem desenhadas manualmente.
+- **Desktop quadriculado estilo DOS**: o fundo da aplicação usa renderização dedicada com padrão VGA clássico.
+- **Barra de menus Turbo-like**: menus superiores com navegação por `Alt+Letra`, `F10`, setas, `Enter` e clique do mouse.
+- **Estrutura atual de menus**:
+  - Ativos: `File`, `Help`
+  - Estruturais / placeholder visual: `Edit`, `Search`, `Run`, `Compile`, `Debug`, `Tools`, `Options`, `Window`
+- **Sistema de Help navegável**:
+  - carregamento automático do arquivo externo [`HELP.md`](HELP.md)
+  - fallback para tópicos internos quando o markdown não estiver disponível
+  - links entre tópicos
+  - breadcrumb de navegação
+  - retorno por `Alt+F1` (com fallback `Alt+Q`)
+  - suporte a teclado e mouse
+- **Diálogos reutilizáveis**: componente `dialogoOK` com centralização automática, botão configurável e fechamento por teclado/mouse.
+- **Botões estilo Turbo Vision**: componente `turboButton` com hotkey destacada e modos de sombra `shadowModeTurboClassic` e `shadowModeFlat`.
+- **Tema VGA padronizado**:
+  - `default`: Borland blue / MS-DOS clássico
+  - `blue`: NC-style / Norton Commander, com menu e status em ciano
+- **CLI e configuração persistente**:
+  - `--theme`
+  - `--tabsize`
+  - `--no-highlight`
+  - `--local`
+  - `--version`
+- **Build automatizado**: script [`build.ps1`](build.ps1) extrai a versão automaticamente de `cmd/msxedit/main.go`, gera `Build ID` e compila para Windows ou Linux.
 
-Consulte o arquivo [MANUAL.md](MANUAL.md) para instruções detalhadas de compilação e operação.
+## Estado atual do projeto
+
+O foco das últimas iterações foi consolidar a base visual e a infraestrutura de navegação da aplicação. Por isso, a documentação agora diferencia com clareza o que já está pronto do que ainda está em evolução.
+
+### Em funcionamento hoje
+
+- edição de texto em `TextArea`
+- janelas e diálogos customizados
+- menu superior com dropdown
+- janela de `Help`
+- `About`
+- temas e configuração base
+- suporte a mouse em áreas principais da UI
+
+### Em evolução / ainda não finalizado
+
+- fluxo completo de `Open` / `Save`
+- ações reais de `Compile` / `Make`
+- `syntax highlighting` efetivo no editor
+- parser de arquivos BASIC tokenizados (`.BAS` binário)
+- renderização de números de linha usando `show_line_numbers`
+
+## Stack do projeto
+
+- **Go 1.26+**
+- **tview** e **tcell**
+- **PowerShell** para automação de build
+- **GPL 3.0**
+
+## Documentação
+
+- [`MANUAL.md`](MANUAL.md): compilação, operação, atalhos e limitações atuais
+- [`REFERENCE.md`](REFERENCE.md): opções de CLI, configuração e comportamento da UI
+- [`HELP.md`](HELP.md): conteúdo do sistema de ajuda carregado em runtime
+- [`OUTLINE.md`](OUTLINE.md): histórico conceitual e decisões de arquitetura

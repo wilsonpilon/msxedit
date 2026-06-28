@@ -35,6 +35,11 @@ O objetivo é criar um editor de texto estilo TUI (Text User Interface) focado e
 - **Passo 14**: Implementação do `Dialogo OK` reutilizável, com helper de centralização e suporte a botão customizável (label/hotkey/callback).
 - **Passo 15**: Criação do componente `turboButton` e padronização visual dos botões com sombra estilo Turbo Vision.
 - **Passo 16**: Adição de modos configuráveis de sombra (`shadowModeTurboClassic` e `shadowModeFlat`) para alternância rápida por tema/diálogo.
+- **Passo 17**: Consolidação da janela de `Help` customizada, com moldura dupla, número de janela, barras de rolagem e comportamento independente do editor.
+- **Passo 18**: Suporte a carregamento dinâmico de `HELP.md`, com parser de headings/links markdown e fallback interno quando o arquivo não estiver disponível.
+- **Passo 19**: Navegação avançada no `Help` com breadcrumb, `Alt+F1`, fallback `Alt+Q`, subpainel especial para `Editor Commands` e seleção por teclado.
+- **Passo 20**: Expansão do suporte a mouse para barra de menus, botões `[■]`, links do `Help` e trilhas de rolagem.
+- **Passo 21**: Revisão completa da documentação para distinguir recursos já implementados dos itens ainda em evolução e consolidação do release `4.0.7`.
 
 ## Instruções para IAs Futuras
 
@@ -42,3 +47,4 @@ O objetivo é criar um editor de texto estilo TUI (Text User Interface) focado e
 - **Consistência Visual**: Mantenha a paleta VGA clássica definida em `internal/tui/theme.go`, preservando os perfis `default` (Borland blue) e `blue` (NC-style).
 - **Consistência de Componentes**: Reutilize `dialogoOK` e `turboButton` para novos fluxos, evitando duplicação de desenho de diálogo/botão.
 - **Menus e Atalhos**: Use sempre o sistema de `SetInputCapture` para garantir que atalhos de teclado (Alt+Hotkey, F10) funcionem em toda a aplicação. No dropdown, as hotkeys devem funcionar sem Alt.
+- **Documentação Confiável**: Sempre documente separadamente o que já está funcional e o que ainda é scaffolding, placeholder ou roadmap, evitando promessas além do estado real do código.

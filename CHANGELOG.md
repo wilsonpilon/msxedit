@@ -4,6 +4,35 @@ Todas as mudancas relevantes deste projeto serao documentadas neste arquivo.
 
 Formato baseado em categorias (`Added`, `Changed`, `Fixed`, `Docs`).
 
+## [4.0.7] - 2026-06-27
+
+### Added
+- Janela de `Help` navegavel com conteudo carregado de `HELP.md`, fallback interno e topicos interligados por links.
+- Navegacao por breadcrumb no `Help`, com retorno por `Alt+F1` e fallback `Alt+Q` para terminais que nao entregam a combinacao original.
+- Suporte a mouse na interface principal para:
+  - clique na barra de menus
+  - clique no controle `[■]` para fechar janelas/dialogos
+  - clique em links e barras de rolagem da janela de `Help`
+- Subjanela centralizada para `Editor Commands` dentro do `Help`, com cabecalho estilo Turbo e lista selecionavel.
+
+### Changed
+- Documentacao principal sincronizada com o estado real do projeto:
+  - `README.md`
+  - `MANUAL.md`
+  - `HELP.md`
+  - `REFERENCE.md`
+  - `OUTLINE.md`
+- Menus documentados de forma mais precisa: `File` e `Help` possuem fluxos ativos; os demais itens permanecem como scaffolding visual para iteracoes futuras.
+- A release-base do projeto passa a ser identificada como `4.0.7`.
+
+### Fixed
+- Referencias desatualizadas de versao (`4.0.3`) substituidas por `4.0.7` onde representavam a versao corrente.
+- Documentacao corrigida para separar recursos implementados de recursos ainda planejados (como `Open/Save`, `Compile/Make`, `syntax highlight` completo e parser tokenizado de BASIC).
+
+### Docs
+- Ajuda embarcada reescrita para refletir o comportamento atual da UI, atalhos, temas, mouse, menus e limitacoes conhecidas.
+- Manual e referencia atualizados com parametros reais de build/configuracao e observacoes sobre funcionalidades em andamento.
+
 ## [4.0.3] - 2026-06-27
 
 ### Added
@@ -37,7 +66,7 @@ Formato baseado em categorias (`Added`, `Changed`, `Fixed`, `Docs`).
   - temas VGA (`default`, `blue`)
   - novos componentes de UI reutilizaveis
   - evolucao da arquitetura e padroes visuais
-- Versao de referencia atualizada para `4.0.3` na documentacao.
+- Versao de referencia atualizada para `4.0.3` na documentacao da epoca.
 
 ## [4.0.1] - 2026-06-xx
 

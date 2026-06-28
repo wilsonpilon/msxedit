@@ -126,7 +126,7 @@ func defaultMenus(app *App) []MenuDefinition {
 		{
 			Title: "&Help",
 			Items: []MenuEntry{
-				{Label: "&Contents"},
+				{Label: "&Contents", Action: func() { app.showHelpWindow() }},
 				{Label: "&Index", Shortcut: "[Shift]+[F1]"},
 				{Label: "&Topc search", Shortcut: "[Ctrl]+[F1]"},
 				{Label: "&Previous topic", Shortcut: "[Alt]+[F1]"},
@@ -252,6 +252,9 @@ func (mc *menuController) showPopup() {
 		popup.AddItem(formatMenuItemWithShortcut(item.Label, item.Shortcut, width-2), "", 0, item.Action)
 	}
 	popup.SetCurrentItem(firstSelectableIndex(menu.Items))
+	popup.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		mc.activateCurrent()
+	})
 
 	popup.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
@@ -425,6 +428,20 @@ func menuX(menus []MenuDefinition, active int) int {
 		x += len([]rune(plain)) + 3
 	}
 	return x
+}
+
+// menuClickIndex retorna o índice do menu clicado na barra ou -1 se não há menu nessa posição.
+func menuClickIndex(menus []MenuDefinition, clickX int) int {
+	for i := range menus {
+		startX := menuX(menus, i)
+		plain, _ := stripAccelerator(menus[i].Title)
+		// ocupa: espaço-antes + título (sem espaço-depois que vai para o separador)
+		endX := startX + len([]rune(plain))
+		if clickX >= startX && clickX <= endX {
+			return i
+		}
+	}
+	return -1
 }
 
 func maxInt(a, b int) int {
