@@ -6,15 +6,16 @@ import (
 	"msxedit/internal/cli"
 	"msxedit/internal/config"
 	"msxedit/internal/tui"
-	"time"
 )
 
-const Version = "4.0.7"
+const Version = "4.1.5"
+
+// BuildID é injetado em tempo de compilação pelo build.ps1
+// via -ldflags "-X main.BuildID=<hex>". Valor "dev" indica build manual.
+var BuildID = "dev"
 
 func main() {
-	// Gerar Build ID (Hexadecimal do Unix UTC)
-	buildID := fmt.Sprintf("%X", time.Now().UTC().Unix())
-	fullVersion := fmt.Sprintf("%s (%s)", Version, buildID)
+	fullVersion := fmt.Sprintf("%s (%s)", Version, BuildID)
 
 	// 1. Interpretar opções de linha de comando
 	opts := cli.Parse(fullVersion)
@@ -42,7 +43,7 @@ func main() {
 	}
 
 	// 4. Iniciar Interface TUI
-	app := tui.NewApp(Version, buildID, cfg.Theme)
+	app := tui.NewApp(Version, BuildID, cfg.Theme)
 	if err := app.Run(opts.FilePath); err != nil {
 		log.Fatalf("Erro ao iniciar interface: %v", err)
 	}

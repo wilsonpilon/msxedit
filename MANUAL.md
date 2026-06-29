@@ -1,6 +1,6 @@
 # Manual de Operação e Compilação - MSXEdit
 
-Este documento descreve o estado operacional atual do MSXEdit na release `4.0.7`.
+Este documento descreve o estado operacional atual do MSXEdit na release `4.1.5`.
 
 ## Compilação
 
@@ -8,45 +8,56 @@ O MSXEdit é escrito em Go e requer **Go 1.26 ou superior**.
 
 ### Usando o script `build.ps1` (recomendado no Windows)
 
-O script:
-
-- lê a versão diretamente de `cmd/msxedit/main.go`
-- gera um `Build ID` hexadecimal em UTC
-- executa `go mod tidy`
-- compila para Windows ou Linux
-
-Exemplos:
+O script compila um ou ambos os executáveis do pacote (`msxedit` e `msxread`), gerando um
+**Build ID** hexadecimal em tempo de compilação, comum a ambos os binários.
 
 ```powershell
-# Windows / release (padrão)
+# Windows / release — compila msxedit e msxread
 .\build.ps1
 
-# Linux / release
+# Compilar apenas o editor
+.\build.ps1 -Editor
+
+# Compilar apenas o visualizador
+.\build.ps1 -Reader
+
+# Linux / release (cross-compile)
 .\build.ps1 -Linux
 
-# Build de desenvolvimento
+# Build de desenvolvimento (sem stripping de símbolos)
 .\build.ps1 -Dev
 
-# Build de desenvolvimento e execução imediata
+# Compilar e abrir o editor imediatamente
 .\build.ps1 -Dev -Run
+
+# Compilar e abrir o visualizador com um arquivo
+.\build.ps1 -Dev -View MANUAL.md
 ```
 
-Parâmetros relevantes do script:
+Parâmetros disponíveis:
 
-- `-Windows`: força alvo Windows
-- `-Linux`: gera binário Linux
-- `-Release`: usa flags de release (comportamento padrão)
-- `-Dev`: compila sem flags de stripping
-- `-Run`: executa o binário gerado quando o alvo for Windows
+- `-Windows`: força alvo Windows (comportamento padrão)
+- `-Linux`: gera binário para Linux via cross-compile
+- `-Release`: flags de release — comportamento padrão
+- `-Dev`: compila sem stripping de símbolos de debug
+- `-Editor`: compila apenas `msxedit`
+- `-Reader`: compila apenas `msxread`
+- `-Run`: executa `msxedit` após compilar (apenas Windows nativo)
+- `-View`: executa `msxread` após compilar (apenas Windows nativo)
+
+Argumentos extras após as flags são repassados ao binário executado por `-Run` ou `-View`.
 
 ### Compilação manual
 
 ```bash
 go mod tidy
 go build -o msxedit.exe ./cmd/msxedit/main.go
+go build -o msxread.exe ./cmd/msxread/main.go
 ```
 
-## Inicialização
+Nesse caso o `BuildID` fica como `dev`, indicando build manual sem o script.
+
+## Inicialização — msxedit
 
 O programa pode receber um caminho de arquivo opcional na linha de comando:
 
@@ -58,7 +69,7 @@ O programa pode receber um caminho de arquivo opcional na linha de comando:
 
 Ao iniciar, a aplicação sempre cria a **janela de edição 1**, mesmo quando nenhum arquivo é informado.
 
-## Atalhos e navegação
+## Atalhos e navegação — msxedit
 
 ### Atalhos atualmente funcionais
 
@@ -94,7 +105,7 @@ Ao iniciar, a aplicação sempre cria a **janela de edição 1**, mesmo quando n
 - **Page Up / Page Down / Home / End**: navegação rápida
 - **Esc**: fecha o `Help`
 
-## Interface
+## Interface — msxedit
 
 ### 1. Desktop e layout principal
 
@@ -142,14 +153,17 @@ Estado atual:
 - **`dialogoOK`**: diálogo reutilizável para confirmação/informação
 - **`showDialogoOKCentered(...)`**: helper para centralização automática
 - **`turboButton`**: botão reutilizável com hotkey destacada
-- **`compilerOptionsDialog`**: diálogo de opções com 9 radio buttons, 3 checkboxes em bolinha, área `Conditional defines:` e botões `OK`/`Cancel`/`Help`
+- **`compilerOptionsDialog`**: diálogo de opções com 9 radio buttons, 3 checkboxes em bolinha,
+  área `Conditional defines:` e botões `OK`/`Cancel`/`Help`
 - **Modos de sombra do botão**:
   - `shadowModeTurboClassic`
   - `shadowModeFlat`
 
 ## Sistema de Help
 
-O `Help` carrega seu conteúdo a partir do arquivo [`HELP.md`](HELP.md), buscando-o a partir do diretório atual e subindo na árvore de diretórios. Se o arquivo não for encontrado ou não puder ser interpretado, a aplicação usa um conjunto de tópicos internos como fallback.
+O `Help` carrega seu conteúdo a partir do arquivo [`HELP.md`](HELP.md), buscando-o a partir do
+diretório atual e subindo na árvore de diretórios. Se o arquivo não for encontrado ou não puder
+ser interpretado, a aplicação usa um conjunto de tópicos internos como fallback.
 
 Recursos atuais:
 
@@ -187,14 +201,114 @@ Localização do arquivo global:
 - **Windows**: `%APPDATA%/msxedit/msxedit.json`
 - **Linux**: `~/.config/msxedit/msxedit.json`
 
+## msxread — visualizador companheiro
+
+O `msxread` é o segundo executável do pacote MSXEdit, inspirado no leitor de `README` do
+Turbo Pascal. Exibe arquivos `.txt`, `.bas` MSX-BASIC tokenizados e `.md` diretamente no terminal.
+
+### Uso
+
+```powershell
+.\msxread.exe MANUAL.md
+.\msxread.exe programa.bas
+.\msxread.exe --type txt arquivo.dat
+.\msxread.exe --tabsize 8 codigo.bas
+```
+
+### Tipos de arquivo suportados
+
+| Extensão / tipo | Comportamento |
+|-----------------|---------------|
+| `.txt` | Texto puro com tabulações expandidas |
+| `.bas` | Se tokenizado (cabeçalho `0xFF`): detokenizado para listagem BASIC legível com syntax highlighting; em ASCII: tratado como texto |
+| `.md` | Render leve: títulos realçados, parágrafos com quebra de linha opcional |
+
+A detecção é automática por extensão e conteúdo. Use `--type` para forçar.
+
+### Layout de tela
+
+- **Topo** (cinza/preto): `data ◆ hora ◆ nome do arquivo` — relógio ao vivo
+- **Corpo** (cor configurável, padrão cyan/preto): conteúdo rolável
+- **Status** (cinza/preto): `Command►  posição` à esquerda · `Keys: ↑↓←→ PgUp PgDn  ESC=Exit  F1=Help` à direita
+
+### Teclas de navegação
+
+| Tecla | Ação |
+|-------|------|
+| `↑` / `↓` | Uma linha acima / abaixo |
+| `←` / `→` | Oito colunas à esquerda / direita |
+| `PgUp` / `PgDn` | Página anterior / próxima |
+| `Home` | Início do arquivo |
+| `End` | Final do arquivo |
+| Roda do mouse | Rolagem vertical |
+
+### Busca
+
+| Tecla | Ação |
+|-------|------|
+| `F` | Inicia busca — o prompt muda para `Find►  _` |
+| (digitar) | Adiciona caracteres à query; o primeiro match é destacado em tempo real |
+| `Backspace` | Remove último caractere da query |
+| `Enter` | Confirma e volta ao modo normal |
+| `ESC` | Cancela a busca e remove o destaque |
+| `N` | Próxima ocorrência (com wrap ao final) |
+| `C` | Alterna busca sensível a maiúsculas/minúsculas (`[Aa]` aparece na barra quando ativo) |
+
+### Cores e aparência
+
+| Tecla | Ação |
+|-------|------|
+| `F5` / `F6` | Cor do texto: cicla pelas 16 cores VGA |
+| `F7` / `F8` | Cor do fundo: cicla pelas 16 cores VGA |
+
+### Quebra de linha
+
+| Tecla | Ação |
+|-------|------|
+| `W` | Ativa/desativa quebra de linha (word wrap) |
+
+O wrap respeita fronteiras de palavras: nunca quebra uma palavra no meio.
+Se uma palavra for maior que a largura da janela, a quebra forçada ocorre no limite.
+O scroll horizontal (`←`/`→`) é desativado automaticamente no modo wrap.
+
+### Hi-bit (caracteres acima de 127)
+
+| Tecla | Ação |
+|-------|------|
+| `7` | Desativa hi-bit — bytes 128–255 são substituídos por `·` (modo 7 bits) |
+| `8` | Ativa hi-bit — bytes 128–255 são exibidos como-estão (modo 8 bits, padrão) |
+
+### Impressão e configurações
+
+| Tecla | Ação |
+|-------|------|
+| `P` | Imprime o arquivo (Windows: `notepad /p`; Linux: `lpr`) |
+| `S` | Salva as configurações atuais (cor, wrap, hi-bit) em `msxread.json` |
+
+As configurações são salvas no mesmo diretório do executável (`msxread.json`).
+
+### Flags de linha de comando
+
+| Flag | Descrição |
+|------|-----------|
+| `--type`, `-t` | Força tipo: `auto`, `txt`, `bas`, `md` |
+| `--tabsize` | Espaços por tabulação (padrão `4`) |
+| `--width`, `-w` | Largura máxima para quebra markdown em pré-processamento (0 = sem limite) |
+| `--version`, `-v` | Exibe versão e Build ID |
+| `--help`, `-h` | Exibe ajuda do cobra |
+
+### F1 — Overlay de ajuda
+
+Pressione `F1` para abrir o overlay de ajuda com todas as teclas listadas.
+Qualquer tecla fecha o overlay.
+
 ## Limitações atuais
 
 Os itens abaixo já possuem estrutura de configuração, UI ou roadmap, mas **ainda não estão concluídos**:
 
-- `Open` / `Save` completos
+- `Open` / `Save` completos no msxedit
 - `Compile` / `Make`
 - syntax highlighting efetivo no editor
-- parser de BASIC tokenizado (`.BAS` binário)
 - números de linha visíveis usando `show_line_numbers`
 
 Para detalhes objetivos de opções e comportamento, consulte [`REFERENCE.md`](REFERENCE.md).

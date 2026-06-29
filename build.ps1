@@ -1,67 +1,115 @@
 param (
-    [switch]$Windows,
-    [switch]$Linux,
-    [switch]$Release,
-    [switch]$Dev,
-    [switch]$Run,
+    [switch]$Windows,   # força alvo Windows (comportamento padrão)
+    [switch]$Linux,     # gera binário Linux (cross-compile)
+    [switch]$Release,   # flags de release — comportamento padrão
+    [switch]$Dev,       # compila sem stripping de símbolos
+    [switch]$Editor,    # compila apenas msxedit
+    [switch]$Reader,    # compila apenas msxread
+    [switch]$Run,       # abre msxedit após compilar
+    [switch]$View,      # abre msxread após compilar
     [Parameter(ValueFromRemainingArguments=$true)]
     $ExtraArgs
 )
 
-# Configurações padrão
-$TargetOS = "windows"
-if ($Linux) { $TargetOS = "linux" }
+# ── Plataforma e modo ────────────────────────────────────────────────────────
+$TargetOS = if ($Linux) { "linux" } else { "windows" }
+$Mode     = if ($Dev)   { "debug" } else { "release" }
+$Ext      = if ($TargetOS -eq "windows") { ".exe" } else { "" }
 
-$Mode = "release"
-if ($Dev) { $Mode = "debug" }
+$EditorOutput = "msxedit$Ext"
+$ReaderOutput = "msxread$Ext"
 
-$OutputFile = "msxedit.exe"
-if ($TargetOS -eq "linux") { $OutputFile = "msxedit" }
+# ── O que compilar ───────────────────────────────────────────────────────────
+# Sem -Editor nem -Reader → compila os dois.
+# -Run implica que msxedit esteja disponível; -View implica msxread.
+if (-not $Editor -and -not $Reader) {
+    $BuildEditor = $true
+    $BuildReader  = $true
+} else {
+    $BuildEditor = $Editor.IsPresent
+    $BuildReader  = $Reader.IsPresent
+}
+# Avisar se o usuário pedir -Run/-View mas não tiver compilado o alvo
+if ($Run  -and -not $BuildEditor) {
+    Write-Host "Aviso: -Run especificado mas msxedit não será compilado (-Editor não está ativo)." -ForegroundColor Yellow
+}
+if ($View -and -not $BuildReader) {
+    Write-Host "Aviso: -View especificado mas msxread não será compilado (-Reader não está ativo)." -ForegroundColor Yellow
+}
 
-# Extrair versão do main.go
-$Version = (Get-Content ./cmd/msxedit/main.go | Select-String 'const Version = "(.*)"').Matches.Groups[1].Value
+# ── Versão e Build ID compartilhados ────────────────────────────────────────
+# A versão é lida do msxedit; ambos os binários recebem o mesmo valor.
+# O Build ID é gerado aqui (compile-time) e injetado via -ldflags para que
+# msxedit --version e msxread --version mostrem exatamente o mesmo ID.
+$Version = (Get-Content ./cmd/msxedit/main.go |
+            Select-String 'const Version = "(.*)"').Matches.Groups[1].Value
 if (-not $Version) { $Version = "Desconhecida" }
 
-# Gerar Build ID em Hex (Unix UTC)
-$BuildID = [Convert]::ToString([int64]([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()), 16).ToUpper()
+$BuildID = [Convert]::ToString(
+    [int64]([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()), 16
+).ToUpper()
 
-Write-Host "--- MSXEdit Build System ---" -ForegroundColor Cyan
-Write-Host "Versão: $Version ($BuildID)" -ForegroundColor Green
-Write-Host "Plataforma Alvo: $TargetOS"
-Write-Host "Modo: $Mode"
+# ── Cabeçalho ────────────────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "┌─ MSXEdit Build System ──────────────────────────────┐" -ForegroundColor Cyan
+Write-Host "│  Versão : $Version                                      │" -ForegroundColor Cyan
+Write-Host "│  Build  : $BuildID                                     │" -ForegroundColor Cyan
+Write-Host "│  Alvo   : $TargetOS  |  Modo: $Mode                    │" -ForegroundColor Cyan
+Write-Host "└────────────────────────────────────────────────────────┘" -ForegroundColor Cyan
+Write-Host ""
 
-# Atualizar dependências
+# ── Dependências ─────────────────────────────────────────────────────────────
 Write-Host "Atualizando bibliotecas..." -ForegroundColor Gray
 go mod tidy
 
-# Definir flags de compilação
-$BuildFlags = @()
-if ($Mode -eq "release") {
-    # Remover símbolos de debug e tabelas de símbolos para um binário menor
-    $BuildFlags += "-ldflags"
-    $BuildFlags += "-s -w"
-}
+# ── Flags de compilação ───────────────────────────────────────────────────────
+# -X injeta BuildID nos dois binários em tempo de compilação.
+$LdFlags = "-X main.BuildID=$BuildID"
+if ($Mode -eq "release") { $LdFlags += " -s -w" }
 
-# Configurar variáveis de ambiente para cross-compilation
-$env:GOOS = $TargetOS
+$env:GOOS   = $TargetOS
 $env:GOARCH = "amd64"
 
-# Compilar
-Write-Host "Compilando..." -ForegroundColor Yellow
-go build -o $OutputFile $BuildFlags ./cmd/msxedit/main.go
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Build concluído com sucesso: $OutputFile" -ForegroundColor Green
-    
-    if ($Run) {
-        if ($TargetOS -eq "windows") {
-            Write-Host "Executando..." -ForegroundColor Cyan
-            & ".\$OutputFile" $ExtraArgs
-        } else {
-            Write-Host "Aviso: Não é possível executar binários Linux nativamente no Windows sem WSL." -ForegroundColor Yellow
-        }
+# ── Compilar msxedit ─────────────────────────────────────────────────────────
+if ($BuildEditor) {
+    Write-Host "Compilando msxedit..." -ForegroundColor Yellow
+    go build -o $EditorOutput -ldflags $LdFlags ./cmd/msxedit/main.go
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Erro ao compilar msxedit." -ForegroundColor Red
+        exit $LASTEXITCODE
     }
-} else {
-    Write-Host "Erro durante a compilação." -ForegroundColor Red
-    exit $LASTEXITCODE
+    Write-Host "  → $EditorOutput  OK" -ForegroundColor Green
+}
+
+# ── Compilar msxread ─────────────────────────────────────────────────────────
+if ($BuildReader) {
+    Write-Host "Compilando msxread..." -ForegroundColor Yellow
+    go build -o $ReaderOutput -ldflags $LdFlags ./cmd/msxread/main.go
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Erro ao compilar msxread." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+    Write-Host "  → $ReaderOutput  OK" -ForegroundColor Green
+}
+
+Write-Host ""
+Write-Host "Build concluído: versão $Version  build $BuildID" -ForegroundColor Green
+
+# ── Executar após compilar ───────────────────────────────────────────────────
+if ($Run) {
+    if ($TargetOS -eq "windows") {
+        Write-Host "Executando msxedit..." -ForegroundColor Cyan
+        & ".\$EditorOutput" $ExtraArgs
+    } else {
+        Write-Host "Aviso: binário Linux não pode ser executado no Windows sem WSL." -ForegroundColor Yellow
+    }
+}
+
+if ($View) {
+    if ($TargetOS -eq "windows") {
+        Write-Host "Executando msxread..." -ForegroundColor Cyan
+        & ".\$ReaderOutput" $ExtraArgs
+    } else {
+        Write-Host "Aviso: binário Linux não pode ser executado no Windows sem WSL." -ForegroundColor Yellow
+    }
 }

@@ -4,6 +4,38 @@ Todas as mudancas relevantes deste projeto serao documentadas neste arquivo.
 
 Formato baseado em categorias (`Added`, `Changed`, `Fixed`, `Docs`).
 
+## [4.2.0] - 2026-06-29
+
+### Added
+- **`msxread`** — novo utilitário visualizador de textos, par do `msxedit`, no estilo do
+  leitor de `README` do Turbo Pascal. Executável independente (`cmd/msxread`):
+  - Exibe **3 tipos de arquivo**: `.txt` (texto puro), `.bas` **tokenizado** (detokenizado
+    para listagem BASIC legível) e `.md` (ajuda, render leve com títulos e links).
+  - **Barra de topo** cinza com letras pretas: data, hora e nome do arquivo separados por
+    losango `◆`.
+  - **Corpo** com fundo cyan e letras pretas, rolável.
+  - **Barra de status** cinza: `Command►` + indicador de posição (`*** Top of File ***`,
+    `*** End of File ***` ou `Line N of M`) + mini-help `Keys: ↑ ↓ ← → PgUp PgDn  ESC=Exit  F1=Help`.
+  - Navegação: setas, `PgUp`/`PgDn`, `Home`/`End`, roda do mouse; `F1` abre overlay de ajuda;
+    `ESC` (ou `Q`) sai.
+  - Relógio ao vivo (atualiza a hora no topo a cada segundo).
+  - CLI com **cobra**: argumento posicional `<arquivo>`, flags `--type/-t (auto|txt|bas|md)`,
+    `--tabsize`, `--version/-v`, `--help/-h`.
+- **Detokenizador MSX-BASIC** funcional em `internal/basic`:
+  - `internal/basic/detokenize.go`: `IsTokenized`, `Detokenize`, `DetokenizeToText`.
+  - Tabelas completas de tokens simples (0x81–0xFC) e estendidos (prefixo 0xFF) em `tokens.go`.
+  - Decodificação de números (dígito imediato, byte, word, ref. de linha, `&H`, `&O`, float
+    single/double BCD) e zonas literais (`REM`, `DATA`, `CALL`, strings, `'`, `ELSE`).
+  - Testes (`detokenize_test.go`) cobrindo os exemplos de `TOKEN.md` seção 9.
+
+### Changed
+- `build.ps1` agora compila **ambos** os binários (`msxedit` e `msxread`) e reporta as duas versões.
+- `internal/basic/tokens.go`: stub `Processor`/`LoadTokenized` substituído pelas tabelas
+  completas usadas pelo detokenizador.
+
+### Docs
+- `README.md`, `MANUAL.md`, `REFERENCE.md`, `OUTLINE.md` atualizados com o utilitário `msxread`.
+
 ## [4.1.0] - 2026-06-29
 
 ### Added

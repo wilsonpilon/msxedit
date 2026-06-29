@@ -1,63 +1,74 @@
 package basic
 
-import (
-	"errors"
-	"io"
-)
-
-// Tokens comuns do MSX-BASIC (exemplos iniciais de 0x80 em diante)
-var Tokens = map[byte]string{
-	0x81: "END",
-	0x82: "FOR",
-	0x83: "NEXT",
-	0x84: "DATA",
-	0x85: "INPUT",
-	0x86: "DIM",
-	0x87: "READ",
-	0x88: "LET",
-	0x89: "GOTO",
-	0x8A: "RUN",
-	0x8B: "IF",
-	0x8C: "RESTORE",
-	0x8D: "GOSUB",
-	0x8E: "RETURN",
-	0x8F: "REM",
-	0x90: "STOP",
-	0x91: "PRINT",
-	0x92: "CLEAR",
-	0x93: "LIST",
-	0x94: "NEW",
-	0x95: "ON",
-	0x96: "WAIT",
-	0x97: "DEF",
-	0x98: "POKE",
-	0x99: "CONT",
-	// ... mais tokens seriam adicionados aqui
-}
-
-// MSXHeader é o byte inicial de arquivos BASIC tokenizados (0xFF)
+// MSXHeader é o byte inicial de arquivos BASIC tokenizados (0xFF), gravado no
+// endereço de memória 0x8000.
 const MSXHeader = 0xFF
 
-// Line representa uma linha do BASIC
+// Line representa uma linha do programa BASIC já detokenizada.
 type Line struct {
 	Number  uint16
 	Content string
 }
 
-// Tokenizer para converter ASCII -> Tokens e vice-versa
-type Processor struct {
-	// Poderíamos ter tabelas de lookup otimizadas aqui
+// simpleTokens mapeia tokens de 1 byte (0x81–0xFC) para a palavra-chave.
+// Referência: TOKEN.md seção 2.
+var simpleTokens = map[byte]string{
+	// Comandos (0x81–0xD8)
+	0x81: "END", 0x82: "FOR", 0x83: "NEXT", 0x84: "DATA",
+	0x85: "INPUT", 0x86: "DIM", 0x87: "READ", 0x88: "LET",
+	0x89: "GOTO", 0x8A: "RUN", 0x8B: "IF", 0x8C: "RESTORE",
+	0x8D: "GOSUB", 0x8E: "RETURN", 0x8F: "REM", 0x90: "STOP",
+	0x91: "PRINT", 0x92: "CLEAR", 0x93: "LIST", 0x94: "NEW",
+	0x95: "ON", 0x96: "WAIT", 0x97: "DEF", 0x98: "POKE",
+	0x99: "CONT", 0x9A: "CSAVE", 0x9B: "CLOAD", 0x9C: "OUT",
+	0x9D: "LPRINT", 0x9E: "LLIST", 0x9F: "CLS", 0xA0: "WIDTH",
+	0xA2: "TRON", 0xA3: "TROFF", 0xA4: "SWAP", 0xA5: "ERASE",
+	0xA6: "ERROR", 0xA7: "RESUME", 0xA8: "DELETE", 0xA9: "AUTO",
+	0xAA: "RENUM", 0xAB: "DEFSTR", 0xAC: "DEFINT", 0xAD: "DEFSNG",
+	0xAE: "DEFDBL", 0xAF: "LINE", 0xB0: "OPEN", 0xB1: "FIELD",
+	0xB2: "GET", 0xB3: "PUT", 0xB4: "CLOSE", 0xB5: "LOAD",
+	0xB6: "MERGE", 0xB7: "FILES", 0xB8: "LSET", 0xB9: "RSET",
+	0xBA: "SAVE", 0xBB: "LFILES", 0xBC: "CIRCLE", 0xBD: "COLOR",
+	0xBE: "DRAW", 0xBF: "PAINT", 0xC0: "BEEP", 0xC1: "PLAY",
+	0xC2: "PSET", 0xC3: "PRESET", 0xC4: "SOUND", 0xC5: "SCREEN",
+	0xC6: "VPOKE", 0xC7: "SPRITE", 0xC8: "VDP", 0xC9: "BASE",
+	0xCA: "CALL", 0xCB: "TIME", 0xCC: "KEY", 0xCD: "MAX",
+	0xCE: "MOTOR", 0xCF: "BLOAD", 0xD0: "BSAVE", 0xD1: "DSKO$",
+	0xD2: "SET", 0xD3: "NAME", 0xD4: "KILL", 0xD5: "IPL",
+	0xD6: "COPY", 0xD7: "CMD", 0xD8: "LOCATE",
+
+	// Palavras auxiliares e operadores (0xD9–0xFC)
+	0xD9: "TO", 0xDA: "THEN", 0xDB: "TAB(", 0xDC: "STEP",
+	0xDD: "USR", 0xDE: "FN", 0xDF: "SPC(", 0xE0: "NOT",
+	0xE1: "ERL", 0xE2: "ERR", 0xE3: "STRING$", 0xE4: "USING",
+	0xE5: "INSTR", 0xE7: "VARPTR", 0xE8: "CSRLIN", 0xE9: "ATTR$",
+	0xEA: "DSKI$", 0xEB: "OFF", 0xEC: "INKEY$", 0xED: "POINT",
+	0xEE: ">", 0xEF: "=", 0xF0: "<", 0xF1: "+",
+	0xF2: "-", 0xF3: "*", 0xF4: "/", 0xF5: "^",
+	0xF6: "AND", 0xF7: "OR", 0xF8: "XOR", 0xF9: "EQV",
+	0xFA: "IMP", 0xFB: "MOD", 0xFC: "\\",
+
+	// 0xA1 = ELSE (sempre precedido de ':', tratado no scanner).
+	0xA1: "ELSE",
 }
 
-func NewProcessor() *Processor {
-	return &Processor{}
-}
-
-// LoadTokenized lê um arquivo .BAS tokenizado
-func (p *Processor) LoadTokenized(r io.Reader) ([]Line, error) {
-	// Implementação futura do parser de formato binário do MSX
-	// [Header 0xFF]
-	// [Ptr Prox Linha (2 bytes)][Num Linha (2 bytes)][Tokens/Chars...][0x00]
-	// Final do arquivo: [Ptr Prox Linha == 0x0000]
-	return nil, errors.New("não implementado: carregamento de binário BASIC")
+// extendedTokens mapeia tokens lidos após o prefixo 0xFF (funções e variáveis
+// de sistema). Referência: TOKEN.md seção 3.
+//
+// As funções não incluem o parêntese de abertura: o '(' é gravado como ASCII
+// literal (0x28) logo após o token. Por isso 0xAC mapeia para "LOC" e não
+// "LOC(": o byte 0x28 seguinte produz o parêntese naturalmente.
+var extendedTokens = map[byte]string{
+	0x81: "LEFT$", 0x82: "RIGHT$", 0x83: "MID$", 0x84: "SGN",
+	0x85: "INT", 0x86: "ABS", 0x87: "SQR", 0x88: "RND",
+	0x89: "SIN", 0x8A: "LOG", 0x8B: "EXP", 0x8C: "COS",
+	0x8D: "TAN", 0x8E: "ATN", 0x8F: "FRE", 0x90: "INP",
+	0x91: "POS", 0x92: "LEN", 0x93: "STR$", 0x94: "VAL",
+	0x95: "ASC", 0x96: "CHR$", 0x97: "PEEK", 0x98: "VPEEK",
+	0x99: "SPACE$", 0x9A: "OCT$", 0x9B: "HEX$", 0x9C: "LPOS",
+	0x9D: "BIN$", 0x9E: "CINT", 0x9F: "CSNG", 0xA0: "CDBL",
+	0xA1: "FIX", 0xA2: "STICK", 0xA3: "STRIG", 0xA4: "PDL",
+	0xA5: "PAD", 0xA6: "DSKF", 0xA7: "FPOS", 0xA8: "CVI",
+	0xA9: "CVS", 0xAA: "CVD", 0xAB: "EOF", 0xAC: "LOC",
+	0xAD: "LOF", 0xAE: "MKI$", 0xAF: "MKS$", 0xB0: "MKD$",
 }

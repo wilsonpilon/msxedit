@@ -8,7 +8,25 @@
       "Bash(go build:*)",
       "Bash(grep -n \"showCompilerOptions\\\\|CompilerOptions\\\\|compiler_options\" internal/tui/*.go)",
       "Bash(go env:*)",
-      "Read(//e/msxedit/$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/**)"
+      "Read(//e/msxedit/$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/**)",
+      "Bash(go test *)",
+      "Bash(go vet *)",
+      "Bash(go mod *)",
+      "Bash(./msxread.exe --version)",
+      "Bash(./msxread.exe --help)",
+      "Bash(./msxread.exe)",
+      "Bash(./msxread.exe naoexiste.txt)",
+      "PowerShell(./build.ps1 -Dev 2>&1)",
+      "Skill(run)",
+      "Bash(tmux new-session *)",
+      "Bash(tmux send-keys *)",
+      "Bash(tmux capture-pane *)",
+      "Bash(tmux kill-session *)",
+      "Bash(python3 *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Remove-Item *)",
+      "Read(//home/wilso/**)",
+      "PowerShell(tmux *)"
     ]
   }
 }

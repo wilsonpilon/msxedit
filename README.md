@@ -77,6 +77,27 @@ O foco das últimas iterações foi consolidar a base visual e a infraestrutura 
   <figcaption>Tela principal do MSXEdit em execução</figcaption>
 </figure>
 
+## msxread — visualizador companheiro
+
+O projeto inclui um segundo executável, **`msxread`**, um visualizador de textos no espírito do
+leitor de `README` do Turbo Pascal. Funciona de forma independente do `msxedit`.
+
+- **Tipos suportados**: `.txt` (texto puro), `.bas` **tokenizado** (detokenizado para listagem
+  BASIC legível) e `.md` (ajuda, com render leve de títulos e links).
+- **Layout**: barra de topo cinza (data `◆` hora `◆` nome do arquivo), corpo com fundo cyan e
+  barra de status `Command►` com indicador de posição (`*** Top of File ***`) e mini-help de teclas.
+- **Navegação**: setas, `PgUp`/`PgDn`, `Home`/`End`, roda do mouse, `F1` (ajuda) e `ESC` (sair).
+- **CLI** (via `cobra`):
+
+```powershell
+.\msxread.exe MANUAL.md
+.\msxread.exe programa.bas
+.\msxread.exe --type txt arquivo.dat
+.\msxread.exe --version
+```
+
+O detokenizador MSX-BASIC vive em `internal/basic` e segue a referência de [`TOKEN.md`](TOKEN.md).
+
 ## Stack do projeto
 
 - **Go 1.26+**
