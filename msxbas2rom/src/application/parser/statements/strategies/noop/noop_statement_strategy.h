@@ -1,0 +1,13 @@
+#ifndef NOOP_STATEMENT_STRATEGY_H_INCLUDED
+#define NOOP_STATEMENT_STRATEGY_H_INCLUDED
+
+#include "parser_statement_strategy.h"
+
+class NoopStatementStrategy : public IParserStatementStrategy {
+ public:
+  bool execute(shared_ptr<ParserContext> context,
+               shared_ptr<LexerLineContext> statement,
+               shared_ptr<Lexeme> lexeme) override;
+};
+
+#endif  // NOOP_STATEMENT_STRATEGY_H_INCLUDED

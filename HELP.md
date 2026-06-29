@@ -57,7 +57,8 @@ Current menu status:
 
 - `File`: active menu, with `Exit` implemented
 - `Help`: active menu, with `Contents` and `About` implemented
-- `Edit`, `Search`, `Run`, `Compile`, `Debug`, `Tools`, `Options`, `Window`: visible and navigable, still scaffolded with placeholder content
+- `Edit`, `Search`, `Run`, `Compile`, `Debug`, `Tools`, `Window`: visible and navigable, still scaffolded with placeholder content
+- `Options`: now opens `Compiler/Interpreter Options` with radio buttons, checkboxes, `Conditional defines:`, and `OK`/`Cancel`/`Help`
 
 The status bar also displays legacy labels for `F2 Save`, `F3 Open`, `Alt+F9 Compile` and `F9 Make`, but those workflows are not yet wired to concrete actions.
 
@@ -87,6 +88,7 @@ Built-in components already used by the application:
 - custom editor window with double border
 - `dialogoOK` reusable dialog
 - `turboButton` reusable Turbo-style button
+- `compilerOptionsDialog` for `Compiler/Interpreter Options`
 - `About` dialog
 - `Help` window with markdown topic loading and fallback internal content
 

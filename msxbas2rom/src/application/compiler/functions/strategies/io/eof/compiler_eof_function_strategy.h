@@ -1,0 +1,20 @@
+#ifndef EOF_COMPILER_FUNCTION_STRATEGY_H_INCLUDED
+#define EOF_COMPILER_FUNCTION_STRATEGY_H_INCLUDED
+
+#include "compiler_function_strategy.h"
+
+class ActionNode;
+class CompilerContext;
+
+class EofCompilerFunctionStrategy : public ICompilerFunctionStrategy {
+ public:
+  /***
+   * @brief EOF function
+   * @note https://www.msx.org/wiki/EOF()
+   */
+  int execute(shared_ptr<CompilerContext> context,
+              shared_ptr<ActionNode> action, int* result,
+              unsigned int parmCount) override;
+};
+
+#endif  // EOF_COMPILER_FUNCTION_STRATEGY_H_INCLUDED

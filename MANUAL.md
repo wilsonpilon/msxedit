@@ -134,6 +134,7 @@ Estado atual:
 
 - `File`: possui fluxo de abertura do dropdown e ação real de `Exit`
 - `Help`: possui fluxo real para `Contents` e `About`
+- `Options`: possui o diálogo `Compiler/Interpreter Options`
 - Demais menus: ainda atuam como scaffolding visual e mostram `No options yet`
 
 ### 4. Diálogos e componentes reutilizáveis
@@ -141,6 +142,7 @@ Estado atual:
 - **`dialogoOK`**: diálogo reutilizável para confirmação/informação
 - **`showDialogoOKCentered(...)`**: helper para centralização automática
 - **`turboButton`**: botão reutilizável com hotkey destacada
+- **`compilerOptionsDialog`**: diálogo de opções com 9 radio buttons, 3 checkboxes em bolinha, área `Conditional defines:` e botões `OK`/`Cancel`/`Help`
 - **Modos de sombra do botão**:
   - `shadowModeTurboClassic`
   - `shadowModeFlat`

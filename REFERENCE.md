@@ -1,6 +1,6 @@
 # Referência de Opções - MSXEdit
 
-Este arquivo resume as opções de linha de comando, chaves de configuração e comportamentos visíveis da release `4.0.7`.
+Este arquivo resume as opções de linha de comando, chaves de configuração e comportamentos visíveis da release `4.1.0`.
 
 ## Opções de Linha de Comando
 
@@ -11,7 +11,7 @@ Este arquivo resume as opções de linha de comando, chaves de configuração e 
 | `--local` | Força o uso do arquivo `msxedit.json` no diretório atual em vez do diretório global. |
 | `--theme <nome>` | Define o tema de cores da interface (`default` ou `blue`). |
 | `--tabsize <n>` | Define o tamanho do caractere Tab (ex: 4 ou 8). |
-| `--no-highlight` | Desativa a preferência de realce de sintaxe. A infraestrutura de configuração já existe, mas o realce visual ainda está em evolução. |
+| `--no-highlight` | Desativa o realce de sintaxe MSX-BASIC no editor. |
 
 ### Argumento posicional
 
@@ -39,7 +39,7 @@ As seguintes chaves podem ser configuradas no arquivo JSON:
 - **theme**: String. Nome do tema de cores (`default` ou `blue`).
 - **tab_size**: Integer. Espaços por Tab.
 - **show_line_numbers**: Boolean. Preferência já persistida em configuração, mas a margem visual com números de linha ainda não é desenhada na UI atual.
-- **highlight**: Boolean. Preferência persistida para o pipeline de realce de sintaxe, ainda não finalizado no editor atual.
+- **highlight**: Boolean. Ativa/desativa o realce de sintaxe MSX-BASIC no editor.
 
 ### Ordem de precedência
 
@@ -70,10 +70,28 @@ Ambos os temas aplicam paleta explícita para:
   - `showDialogoOKCentered(dialog, width, height)`
 - **`turboButton`**: Botão visual estilo Turbo Vision.
   - Modos de sombra: `shadowModeTurboClassic`, `shadowModeFlat`
+- **`compilerOptionsDialog`**: Diálogo completo de opções do compilador/interpretador.
+  - 9 radio buttons em dois grupos (Basic Code / Others)
+  - 3 checkboxes desenhados com marcador em bolinha (`[•]`)
+  - Área de texto editável para defines condicionais
+  - Botões OK / Cancel / Help com foco e hotkeys
+  - `showCompilerOptionsDialogCentered(dialog, width, height)`
+- **`editorWindow`** (windowing flutuante):
+  - Arrastar pela barra de título
+  - Redimensionar pelo canto `◢`
+  - Maximizar/restaurar com botão `[▲]`/`[▼]`
+  - Scrollbars H/V clicáveis
+  - `highlightEnabled bool` — ativa syntax highlighting MSX-BASIC
 
 ## Menus e Atalhos Atuais
 
 ### Menus superiores
+
+- `Options` -> `Compiler/Interpreter...`: abre a janela `Compiler/Interpreter Options`
+  - radio buttons: `MSX-BASIC`, `Basic Dignified`, `MSX Bas2Rom`, `Turbo Basic`, `NBasic`, `MSXgl/SDCC`, `N80/LK80`, `ASCII-C`, `Turbo Pascal 3.3f`
+  - checkboxes: `Extended syntax`, `Overflow checking`, `Strict vars`
+  - área `Conditional defines:` para texto livre
+  - botões `OK`, `Cancel` e `Help`
 
 - `File`
 - `Edit`
@@ -88,10 +106,11 @@ Ambos os temas aplicam paleta explícita para:
 
 ### Menus com ação efetiva hoje
 
-- **`File`**: contém a ação `Exit`
-- **`Help`**: contém `Contents` e `About`
+- **`File`**: `Exit`
+- **`Options`**: `Compiler/Interpreter…` — abre diálogo de opções completo
+- **`Help`**: `Contents` (janela Help navegável) e `About`
 
-Os demais menus existem como estrutura visual e de navegação, mas ainda exibem `No options yet`.
+Os demais itens de menu existem como estrutura visual/scaffold.
 
 ### Hotkeys implementadas
 
@@ -119,10 +138,29 @@ Controles principais dentro do `Help`:
 - `Esc`: fechar
 - `Setas`, `PgUp`, `PgDn`, `Home`, `End`: rolagem e navegação
 
+## Syntax Highlighting MSX-BASIC
+
+Implementado em `msxbasic_highlight.go`. Categorias de token:
+
+| Categoria | Cor (tema default) | Exemplos |
+|-----------|-------------------|---------|
+| `basicKindLineNumber` | amarelo | `10`, `100` |
+| `basicKindStatement` | ciano brilhante | `PRINT`, `GOTO`, `IF`, `FOR` |
+| `basicKindModifier` | verde brilhante | `THEN`, `ELSE`, `TO`, `STEP` |
+| `basicKindFunction` | azul brilhante | `LEFT$()`, `PEEK()`, `RND` |
+| `basicKindString` | magenta | `"HELLO"` |
+| `basicKindNumber` | verde | `42`, `3.14`, `&HFFFF` |
+| `basicKindComment` | cinza | `REM …`, `' …` |
+| `basicKindVariable` | branco | `A`, `COUNT$`, `X1%` |
+| `basicKindOperator` | amarelo | `AND`, `OR`, `+`, `-`, `=` |
+| `basicKindSymbol` | branco | `(`, `)`, `,`, `;`, `:` |
+
+Zonas literais tratadas corretamente: `REM` (tudo comentário), `DATA` (tudo default, exceto strings), strings `"…"`, comentário por apóstrofo `'`.
+
 ## Recursos em andamento
 
-- syntax highlighting efetivo no editor
 - fluxo de `Open` / `Save`
 - ações de `Compile` / `Make`
-- parser de arquivo BASIC tokenizado (`.BAS` binário)
-- renderização de números de linha
+- parser de arquivo BASIC tokenizado (`.BAS` binário) — referência completa em `TOKEN.md`
+- renderização de números de linha na margem do editor
+- submenus de `Environment`, `Window` e restantes de `Options`

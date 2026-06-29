@@ -40,6 +40,11 @@ O objetivo é criar um editor de texto estilo TUI (Text User Interface) focado e
 - **Passo 19**: Navegação avançada no `Help` com breadcrumb, `Alt+F1`, fallback `Alt+Q`, subpainel especial para `Editor Commands` e seleção por teclado.
 - **Passo 20**: Expansão do suporte a mouse para barra de menus, botões `[■]`, links do `Help` e trilhas de rolagem.
 - **Passo 21**: Revisão completa da documentação para distinguir recursos já implementados dos itens ainda em evolução e consolidação do release `4.0.7`.
+- **Passo 22**: Estudo completo do formato binário MSX-BASIC (projeto `basic-dignified`) e criação de `TOKEN.md` como referência definitiva de tokenização/detokenização.
+- **Passo 23**: Expansão do menu `Options` com 12 itens reais (Compiler/Interpreter, Memory Sizes, Linker, Debugger, Directories, Tools, Environment►, Open, Save, Save as).
+- **Passo 24**: Implementação do diálogo `Compiler/Interpreter Options` com 9 radio buttons em dois grupos, 3 checkboxes em bolinha, área de texto editável para defines condicionais e 3 botões Turbo Vision (OK/Cancel/Help).
+- **Passo 25**: Syntax highlighting MSX-BASIC completo no editor — tokenizador `tokenizeBasicLine`, tabela de 100+ keywords, 11 categorias de token, suporte a todas as bases numéricas e zonas literais (REM/DATA/string/apostrophe).
+- **Passo 26**: Windowing completo da janela de edição — arrastar pela barra de título, redimensionar pelo canto `◢`, maximizar/restaurar com `[▲]`/`[▼]`, scrollbars clicáveis, posição flutuante independente do layout flex, captura de mouse durante drag/resize.
 
 ## Instruções para IAs Futuras
 

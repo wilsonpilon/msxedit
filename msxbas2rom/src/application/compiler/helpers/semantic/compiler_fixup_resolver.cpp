@@ -1,0 +1,106 @@
+/***
+ * @file compiler_fixup_resolver.cpp
+ * @brief Compiler fixup resolver
+ * @author Amaury Carvalho (2019-2026)
+ */
+
+#include "compiler_fixup_resolver.h"
+
+#include "build_options.h"
+#include "compiler_code_helper.h"
+#include "compiler_context.h"
+#include "compiler_symbol_resolver.h"
+#include "fix_node.h"
+#include "lexeme.h"
+#include "symbol_node.h"
+
+shared_ptr<FixNode> CompilerFixupResolver::addFix(
+    shared_ptr<SymbolNode> symbol) {
+  auto& cpu = *context->cpu;
+  shared_ptr<FixNode> fix = make_shared<FixNode>(context->cpu);
+  bool is_id = false;
+
+  if (symbol->lexeme) {
+    is_id = (symbol->lexeme->type == Lexeme::type_identifier);
+  }
+
+  if (context->opts->megaROM && !is_id) {
+    // nop, nop      ; reserved to "jr ?, ??" when "call ?, ??" or "jp ?, ??"
+    cpu.addNop();
+    cpu.addNop();
+    // ex AF, AF'    ; save registers (will be restored by MR_ function)
+    cpu.addExAF();
+    // exx
+    cpu.addExx();
+    // ld A, <segm>
+    cpu.addLdA(0x00);
+    // ld HL, <address>
+    cpu.addLdHL(0x0000);
+    // CALL MR_????
+  }
+
+  fix->symbol = symbol;
+  fix->address = cpu.context->code_pointer + 1;
+  fix->step = 0;
+
+  context->fixes.push_back(fix);
+
+  return fix;
+}
+
+shared_ptr<FixNode> CompilerFixupResolver::addFix(shared_ptr<Lexeme> lexeme) {
+  shared_ptr<SymbolNode> symbol = context->symbolResolver->addSymbol(lexeme);
+  return addFix(symbol);
+}
+
+shared_ptr<FixNode> CompilerFixupResolver::addFix(string line) {
+  return addFix(context->symbolResolver->addSymbol(line));
+}
+
+shared_ptr<SymbolNode> CompilerFixupResolver::addPreMark() {
+  string mark_name = "MARK_" + to_string(context->mark_count);
+  context->mark_count++;
+  return context->symbolResolver->addSymbol(mark_name);
+}
+
+shared_ptr<FixNode> CompilerFixupResolver::addMark() {
+  return addFix(addPreMark());
+}
+
+void CompilerFixupResolver::doFix() {
+  auto& cpu = *context->cpu;
+  unsigned int i, t = context->fixes.size(), address;
+  shared_ptr<FixNode> fix;
+  shared_ptr<SymbolNode> symbol;
+
+  for (i = 0; i < t; i++) {
+    fix = context->fixes[i];
+    symbol = fix->symbol;
+    address = symbol->address;
+
+    if (!address) {
+      if (symbol->lexeme) {
+        context->syntaxError(
+            "Symbol reference not found: variable or constant\n" +
+            symbol->lexeme->toString());
+      } else if (symbol->tag) {
+        context->current_tag = symbol->tag;
+        context->syntaxError(
+            "Symbol reference not found: line number in GOTO/GOSUB/RETURN");
+      } else
+        context->syntaxError("Symbol reference not found");
+      break;
+    }
+
+    address += fix->step;
+
+    cpu.context->code[fix->address] = address & 0xFF;
+    cpu.context->code[fix->address + 1] = (address >> 8) & 0xFF;
+  }
+}
+
+CompilerFixupResolver::CompilerFixupResolver(
+    shared_ptr<CompilerContext> context)
+    : context(context) {}
+
+CompilerFixupResolver::~CompilerFixupResolver() = default;

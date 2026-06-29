@@ -74,6 +74,7 @@ func (a *App) Run(filePath string) error {
 		name = filePath
 	}
 	editorWin := newEditorWindow(a.Theme, name, 1)
+	editorWin.highlightEnabled = true
 	editorWin.onClose = func() {
 		a.Application.Stop()
 	}
@@ -92,15 +93,7 @@ func (a *App) Run(filePath string) error {
 	pages := tview.NewPages().
 		AddPage("desktop", desktop, true, true)
 
-	editorHost := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(nil, 1, 0, false).
-		AddItem(tview.NewFlex().
-			AddItem(nil, 2, 0, false).
-			AddItem(editorWin, 0, 1, true).
-			AddItem(nil, 2, 0, false), 0, 1, true).
-		AddItem(nil, 1, 0, false)
-
-	pages.AddPage("editor", editorHost, true, true)
+	pages.AddPage("editor", editorWin, true, true)
 
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
@@ -286,6 +279,28 @@ func (a *App) showAbout() {
 	const dlgW = 40
 	const dlgH = 12
 	showDialogoOKCentered(dialog.dialogoOK, dlgW, dlgH)
+}
+
+func (a *App) showCompilerInterpreterOptions() {
+	dialog := newCompilerOptionsDialog(a)
+	const dlgW = 72
+	const dlgH = 24
+	showCompilerOptionsDialogCentered(dialog, dlgW, dlgH)
+}
+
+func (a *App) showCompilerOptionsHelp() {
+	text := []string{
+		"Compiler/Interpreter Options",
+		"",
+		"Use TAB to move between controls.",
+		"Use SPACE to toggle options.",
+		"",
+		"Detailed help will be added in a future update.",
+	}
+	dlg := newDialogoOK(a, "compiler_options_help", text, nil)
+	dlg.SetButton("O&K", 'k', nil)
+	dlg.SetButtonShadowMode(shadowModeTurboClassic)
+	showDialogoOKCentered(dlg, 52, 13)
 }
 
 // getNextWindowID retorna o próximo ID de janela disponível

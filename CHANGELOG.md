@@ -4,6 +4,48 @@ Todas as mudancas relevantes deste projeto serao documentadas neste arquivo.
 
 Formato baseado em categorias (`Added`, `Changed`, `Fixed`, `Docs`).
 
+## [4.1.0] - 2026-06-29
+
+### Added
+- **Syntax highlighting** para MSX-BASIC no editor:
+  - Novo arquivo `msxbasic_highlight.go` com tokenizador completo (`tokenizeBasicLine`)
+  - Categorias: número de linha, statement, modifier, função built-in, string, número, comentário, variável, operador, símbolo
+  - Mais de 100 keywords mapeadas na tabela `msxKeywordMap`
+  - Números em todas as bases: decimal, `&H` (hex), `&O` (octal), `&B` (binário), com sufixos de tipo
+  - Zonas literais: `REM …`, `DATA …`, strings `"…"`, comentário `'…`
+  - Campo `highlightEnabled` em `editorWindow` controla ativação por janela
+- **Janela de edição flutuante** com windowing completo:
+  - Arrastar pela barra de título (clique e movimento)
+  - Redimensionar pelo canto inferior direito (`◢`)
+  - Botão de zoom `[▲]`/`[▼]` para maximizar/restaurar
+  - Barras de rolagem horizontal e vertical clicáveis
+  - `MouseScrollUp`/`Down` rola o conteúdo
+  - Captura de mouse durante drag/resize via `return (true, w)` no `MouseHandler`
+  - Posicionamento e tamanho armazenados em `winX/winY/winW/winH` (independentes do layout flex)
+- **Diálogo Compiler/Interpreter Options** (`compiler_options_dialog.go`):
+  - 9 opções de linguagem em dois grupos: Basic Code (MSX-BASIC, Basic Dignified, MSX Bas2Rom, Turbo Basic, NBasic) e Others (MSXgl/SDCC, N80/LK80, ASCII-C, Turbo Pascal 3.3f)
+  - 3 checkboxes: Extended syntax, Overflow checking, Strict vars
+  - Área de texto "Conditional defines:" com cursor e edição completa (insert, delete, Enter para nova linha)
+  - 3 botões estilo Turbo Vision: OK, Cancel, Help (com destaque de foco)
+  - Navegação por Tab, Shift+Tab, setas, Space, hotkeys O/C/H
+  - Atalho `Help` abre diálogo de ajuda secundário (`showCompilerOptionsHelp`)
+- **Menu Options** expandido com 12 itens:
+  - Compiler/Interpreter… (ativo — abre diálogo)
+  - Memory Sizes…, Linker…, Debugger…, Directories, Tools (scaffold)
+  - Environment ► (submenu futuro)
+  - Open…, Save …\msxedit.cfg, Save as… (scaffold)
+- **TOKEN.md**: referência completa do formato binário MSX-BASIC (tabela de tokens simples 0x81–0xFC, tokens estendidos 0xFF+byte, encoding de números, estrutura de linha, algoritmos de tokenização/detokenização com exemplos hexadecimais anotados)
+
+### Changed
+- `editorWindow` reescrita para windowing flutuante: ignora rect do layout flex, usa `winX/winY/winW/winH` próprios; inicializa posição na primeira chamada a `Draw()`
+- `tui.go`: janela do editor adicionada diretamente ao `pages` (sem wrapper `editorHost` Flex), permitindo posicionamento livre na tela
+- Canto inferior direito da janela de edição mudou de `╝` para `◢` (handle de resize)
+- Botão de zoom mudou de `[↕]` para `[▲]`/`[▼]` (indica estado atual)
+
+### Docs
+- `TOKEN.md` criado como referência definitiva de tokenização MSX-BASIC
+- `CHANGELOG.md`, `OUTLINE.md`, `REFERENCE.md` atualizados para refletir o estado da release 4.1.0
+
 ## [4.0.7] - 2026-06-27
 
 ### Added

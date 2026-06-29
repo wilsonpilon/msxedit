@@ -1,5 +1,10 @@
 # MSXEdit
 
+<figure>
+  <img src="images/MSX-Edit-01.png" alt="Banner do MSXEdit">
+  <figcaption>Banner do MSXEdit</figcaption>
+</figure>
+
 MSXEdit é um editor TUI com estética retrô, pensado para desenvolvimento em plataformas clássicas como MSX, mas executado em terminais modernos no Windows e Linux.
 
 O projeto combina uma base visual inspirada em Turbo Vision, Norton Editor e ferramentas Borland com uma arquitetura Go moderna, priorizando janelas customizadas, temas VGA explícitos e navegação por teclado/mouse.
@@ -33,6 +38,7 @@ O projeto combina uma base visual inspirada em Turbo Vision, Norton Editor e fer
   - suporte a teclado e mouse
 - **Diálogos reutilizáveis**: componente `dialogoOK` com centralização automática, botão configurável e fechamento por teclado/mouse.
 - **Botões estilo Turbo Vision**: componente `turboButton` com hotkey destacada e modos de sombra `shadowModeTurboClassic` e `shadowModeFlat`.
+- **Diálogo de opções do compilador/interpretador**: janela `Compiler/Interpreter Options` com 9 radio buttons, 3 checkboxes com marcador em bolinha, área `Conditional defines:` e botões `OK`/`Cancel`/`Help`.
 - **Tema VGA padronizado**:
   - `default`: Borland blue / MS-DOS clássico
   - `blue`: NC-style / Norton Commander, com menu e status em ciano
@@ -65,6 +71,11 @@ O foco das últimas iterações foi consolidar a base visual e a infraestrutura 
 - `syntax highlighting` efetivo no editor
 - parser de arquivos BASIC tokenizados (`.BAS` binário)
 - renderização de números de linha usando `show_line_numbers`
+
+<figure>
+  <img src="images/MSX-Edit-02.png" alt="Tela do MSXEdit">
+  <figcaption>Tela principal do MSXEdit em execução</figcaption>
+</figure>
 
 ## Stack do projeto
 

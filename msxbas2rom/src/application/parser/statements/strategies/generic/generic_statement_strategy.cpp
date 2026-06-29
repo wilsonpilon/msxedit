@@ -1,0 +1,59 @@
+#include "generic_statement_strategy.h"
+
+#include "action_node.h"
+#include "lexeme.h"
+#include "lexer_line_context.h"
+
+bool GenericStatementStrategy::parseStatement(
+    shared_ptr<ParserContext> context, shared_ptr<LexerLineContext> statement) {
+  shared_ptr<Lexeme> next_lexeme;
+  shared_ptr<LexerLineContext> parm = make_shared<LexerLineContext>();
+  int sepcount = 0;
+
+  while ((next_lexeme = statement->getNextLexeme())) {
+    next_lexeme = context->coalesceSymbols(next_lexeme);
+
+    if (next_lexeme->isSeparator("(")) {
+      sepcount++;
+    } else if (next_lexeme->isSeparator(")") && sepcount > 0) {
+      sepcount--;
+    } else if (next_lexeme->type == Lexeme::type_separator &&
+               (next_lexeme->value == "," || next_lexeme->value == ";") &&
+               sepcount == 0) {
+      if (parm->getLexemeCount()) {
+        parm->setLexemeBOF();
+        if (!evaluateExpression(context, parm)) {
+          return false;
+        }
+        parm->clearLexemes();
+      } else {
+        next_lexeme = context->lex_null;
+        context->pushActionFromLexeme(next_lexeme);
+      }
+
+      continue;
+    } else if (next_lexeme->isOperator("'")) {
+      break;
+    }
+
+    parm->addLexeme(next_lexeme);
+  }
+
+  if (parm->getLexemeCount()) {
+    parm->setLexemeBOF();
+    if (!evaluateExpression(context, parm)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool GenericStatementStrategy::execute(shared_ptr<ParserContext> context,
+                                       shared_ptr<LexerLineContext> statement,
+                                       shared_ptr<Lexeme> lexeme) {
+  if (lexeme->value == "BLOAD") context->resourceCount++;
+  if (lexeme->value == "PLAY") context->has_play = true;
+
+  return parseStatement(context, statement);
+}

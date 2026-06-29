@@ -1,0 +1,83 @@
+PLAIN ROM MEMORY SCHEME
+=======================
+
+PLAIN ROM SIZE = 48K
+
+PAGE 0 (16K)
+
+  *--MSX ROM BIOS
+
+  *--USER RESOURCES
+     +--MAP 
+     +--DATA
+
+PAGE 1 (16K)
+
+  *--MSX ROM BASIC
+
+  *--COMPILER RUNTIME KERNEL 
+     +--MSX BOOT LOADER
+     +--GENERAL SUPPORT ROUTINES
+     +--TINY SPRITE SUPPORT ROUTINES
+     +--MSX TILE FORGE SUPPORT ROUTINES
+     +--ARKOS TRACKER SUPPORT ROUTINES
+     +--FLOAT POINT MATH PACK
+  
+PAGE 2 (16K)
+
+  *--BASIC BOOT LOADER
+  *--USER CODE
+
+PAGE 3 (16K)
+
+  *--MSX RAM
+     +--KERNEL WORKSPACE (FLAGS)
+     +--USER WORKSPACE (VARIABLES)
+     +--CODE STACK
+     +--MSX BIOS WORKSPACE AND ROUTINES
+
+MEGA ROM MEMORY SCHEME (KONAMI SCC AND ASCII8)
+==============================================
+
+PLAIN ROM SIZE = FROM 128K TO 2048K
+
+PAGE 0 (16K)
+
+  *--MSX ROM BIOS
+
+PAGE 1 (16K) - segments 0 and 1 (8K each)
+
+  *--MSX ROM BASIC
+
+  *--COMPILER RUNTIME KERNEL 
+     +--MSX BOOT LOADER
+     +--GENERAL SUPPORT ROUTINES
+     +--TINY SPRITE SUPPORT ROUTINES
+     +--MSX TILE FORGE SUPPORT ROUTINES
+     +--ARKOS TRACKER SUPPORT ROUTINES
+     +--FLOAT POINT MATH PACK
+  
+PAGE 2 (16K) - segments 2 and 3...
+
+  *--BASIC BOOT LOADER
+  *--USER CODE
+
+PAGE 2 (16K) - after last user code segment, two segments size
+
+  *--USER RESOURCES
+     +--MAP 
+
+PAGE 2 (16K) - after resources map segment, two segments size until segment 255
+
+  *--USER RESOURCES
+     +--DATA
+
+PAGE 3 (16k)
+
+  *--MSX RAM
+     +--KERNEL WORKSPACE (FLAGS)
+     +--USER WORKSPACE (VARIABLES)
+     +--CODE STACK
+     +--MSX BIOS WORKSPACE AND ROUTINES
+
+

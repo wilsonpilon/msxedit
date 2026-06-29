@@ -1,0 +1,35 @@
+#include "compiler_val_function_strategy.h"
+
+#include "action_node.h"
+#include "compiler_code_optimizer.h"
+#include "compiler_context.h"
+#include "compiler_hooks.h"
+#include "lexeme.h"
+
+int ValCompilerFunctionStrategy::execute(shared_ptr<CompilerContext> context,
+                                         shared_ptr<ActionNode> action,
+                                         int* result, unsigned int parmCount) {
+  auto& optimizer = *context->codeOptimizer;
+  if (!context || !action || !action->lexeme) return Lexeme::subtype_unknown;
+  if (parmCount != 1) return Lexeme::subtype_unknown;
+  if (action->lexeme->value != "VAL") return Lexeme::subtype_unknown;
+
+  if (result[0] == Lexeme::subtype_numeric) {
+    // its ok, return same parameter value
+    return result[0];
+
+  } else if (result[0] == Lexeme::subtype_single_decimal ||
+             result[0] == Lexeme::subtype_double_decimal) {
+    // its ok, return same parameter value
+    return result[0];
+
+  } else if (result[0] == Lexeme::subtype_string) {
+    // call 0x7e07   ; VAL function - xbasic string to float (in hl, out b:hl)
+    optimizer.addKernelCall(DISP_XBASIC_VAL);
+    result[0] = Lexeme::subtype_single_decimal;
+
+  } else
+    result[0] = Lexeme::subtype_unknown;
+
+  return result[0];
+}

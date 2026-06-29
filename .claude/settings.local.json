@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat:*)",
+      "Bash(find /e /c /d -maxdepth 3 -type d -name \"basic-dignified\")",
+      "Read(//e//**)",
+      "Read(//c/Users/wilso/**)",
+      "Bash(go build:*)",
+      "Bash(grep -n \"showCompilerOptions\\\\|CompilerOptions\\\\|compiler_options\" internal/tui/*.go)",
+      "Bash(go env:*)",
+      "Read(//e/msxedit/$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/**)"
+    ]
+  }
+}

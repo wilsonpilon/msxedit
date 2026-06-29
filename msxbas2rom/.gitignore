@@ -1,0 +1,89 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Backups
+*.bak
+
+# Binaries and objects
+bin/
+obj/
+
+# Testing objects
+tests/**/*.rom
+tests/**/*.noi
+tests/**/*.omds
+tests/**/*.symbol
+tests/deprecated/
+tests/unit/bin/
+tests/unit/obj/
+tests/unit/tmp/
+tests/**/.vscode/
+
+# Deploys
+dist/
+
+# CocoIndex
+.cocoindex/
+.cocoindex_code/
+
+# Embedding caches
+*.faiss
+*.ann
+*.index
+*.embeddings
+
+# Local semantic databases
+*.sqlite
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+
+# MCP local runtime
+.mcp/
+
+# Ollama local models
+.ollama/
+
+# Temporary AI caches
+.ai-cache/
+.semantic-cache/
+
+# VSCode local MCP config
+.vscode/mcp.json
+
+# Environment settings
+.env
+.env.local
+
