@@ -220,13 +220,35 @@ References:
 
 ## Block commands
 
-Dedicated block selection, cut, copy and paste workflows are not exposed yet as custom editor commands.
+  Block Commands
 
-The current editor area is a text entry surface with retro window chrome. Advanced block operations remain a future step.
+  Ctrl+K B    Mark block begin
+  Ctrl+K K    Mark block end
+  Ctrl+K T    Mark single word
+  Ctrl+K L    Mark line
+  Ctrl+K C    Copy block
+  Ctrl+K V    Move block
+  Ctrl+K Y    Delete block
+  Ctrl+K R    Read block from disk
+  Ctrl+K W    Write block to disk
+  Ctrl+K H    Hide/display block
+  Ctrl+K P    Print block
+  Ctrl+K I    Indent block
+  Ctrl+K U    Unindent block
+  Ctrl+K D    Exit to menu bar
+  Ctrl+Q B    Move to begin of block
+  Ctrl+Q K    Move to end of block
+  Ctrl+Ins    Copy to clipboard
+  Shift+Del   Cut to clipboard
+  Ctrl+Del    Delete block
+  Shift+Ins   Paste from clipboard
+
+  See Also:
+    [Extending Selected Blocks](#extending-selected-blocks)
 
 References:
-- [Editor Commands](#editor-commands)
 - [Help Contents](#contents)
+- [Editor Commands](#editor-commands)
 
 ## Cursor-movement commands
 
@@ -270,4 +292,14 @@ This topic is therefore a status note rather than a completed feature descriptio
 References:
 - [Editor Commands](#editor-commands)
 - [Directives](#directives)
+
+## Extending Selected Blocks
+
+  EXTENDING SELECTED BLOCKS
+
+  [Content to be implemented]
+
+References:
+- [Help Contents](#contents)
+- [Block commands](#block-commands)
 

@@ -89,9 +89,13 @@ func (a *App) Run(filePath string) error {
 		name = filePath
 	}
 	editorWin := newEditorWindow(a.Theme, name, 1)
+	editorWin.app = a
 	editorWin.highlightEnabled = true
 	editorWin.onClose = func() {
 		a.Application.Stop()
+	}
+	editorWin.onExitToMenu = func() {
+		menu.open(0) // foca primeiro item do menu (File)
 	}
 	a.Editors = []*editorWindow{editorWin}
 	a.ActiveEditor = 0

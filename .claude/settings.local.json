@@ -28,7 +28,12 @@
       "Read(//home/wilso/**)",
       "PowerShell(tmux *)",
       "PowerShell(head *)",
-      "Bash(go run *)"
+      "Bash(go run *)",
+      "Bash(grep -r \"func.*TextArea.*Select\\\\|func.*Select.*TextArea\\\\|func \\(t \\\\*TextArea\\)\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
+      "Bash(grep -A 30 \"^func \\(t \\\\*TextArea\\) Replace\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
+      "Bash(grep -A 15 \"^func \\(t \\\\*TextArea\\) GetSelection\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
+      "Bash(grep -A 5 \"^func \\(t \\\\*TextArea\\) HasSelection\\\\|^func \\(t \\\\*TextArea\\) SetClipboard\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
+      "Bash(grep \"KeyCtrl[KQD]\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/gdamore/tcell/v2@v2.13.10/key.go\")"
     ]
   }
 }

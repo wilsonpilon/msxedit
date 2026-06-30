@@ -186,6 +186,47 @@ func (hc *HelpContent) initializeTopics() {
 		},
 	)
 
+	// ── Tópico: Block Commands ────────────────────────────────────────────────
+	blockCmdLines := []string{
+		"",
+		"  Block Commands", // linha 1: renderizada como botão 3D em help_window.go
+		"",
+		"  Ctrl+K B    Mark block begin",
+		"  Ctrl+K K    Mark block end",
+		"  Ctrl+K T    Mark single word",
+		"  Ctrl+K L    Mark line",
+		"  Ctrl+K C    Copy block",
+		"  Ctrl+K V    Move block",
+		"  Ctrl+K Y    Delete block",
+		"  Ctrl+K R    Read block from disk",
+		"  Ctrl+K W    Write block to disk",
+		"  Ctrl+K H    Hide/display block",
+		"  Ctrl+K P    Print block",
+		"  Ctrl+K I    Indent block",
+		"  Ctrl+K U    Unindent block",
+		"  Ctrl+K D    Exit to menu bar",
+		"  Ctrl+Q B    Move to begin of block",
+		"  Ctrl+Q K    Move to end of block",
+		"  Ctrl+Ins    Copy to clipboard",
+		"  Shift+Del   Cut to clipboard",
+		"  Ctrl+Del    Delete block",
+		"  Shift+Ins   Paste from clipboard",
+		"",
+		"  See Also:",
+		"    Extending Selected Blocks",
+		"",
+		"  Contents",
+	}
+	hc.topics["block_commands"] = &HelpTopic{
+		ID:    "block_commands",
+		Title: "Block commands",
+		Lines: blockCmdLines,
+		Links: buildLinks(blockCmdLines, []linkDef{
+			{"Extending Selected Blocks", "extending_selected_blocks"},
+			{"Contents", "contents"},
+		}),
+	}
+
 	// ── Tópicos placeholder ───────────────────────────────────────────────────
 	type simpleTopic struct {
 		id    string
@@ -193,12 +234,12 @@ func (hc *HelpContent) initializeTopics() {
 	}
 	simple := []simpleTopic{
 		{"built_in", "Built-in"},
-		{"block_commands", "Block commands"},
 		{"command_line", "Command Line"},
 		{"cursor_movement_commands", "Cursor-movement commands"},
 		{"debugging", "Debugging"},
 		{"directives", "Directives"},
 		{"error_messages", "Error Messages"},
+		{"extending_selected_blocks", "Extending Selected Blocks"},
 		{"insert_delete_commands", "Insert & Delete commands"},
 		{"browser", "Browser"},
 		{"miscelaneous_commands", "Miscelaneous commands"},

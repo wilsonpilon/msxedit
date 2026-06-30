@@ -125,6 +125,10 @@ func (w *helpWindow) drawContent(screen tcell.Screen, maxX, maxY, x, y, width, h
 		w.drawEditorCommandsSubWindow(screen, maxX, maxY, x, y, width, height, topic)
 		return
 	}
+	if topic.ID == "block_commands" {
+		w.drawBlockCommandsPage(screen, maxX, maxY, x, y, width, height, topic)
+		return
+	}
 
 	startY := y
 	contentHeight := height
@@ -209,6 +213,42 @@ func (w *helpWindow) drawEditorCommandsSubWindow(screen tcell.Screen, maxX, maxY
 			style = tcell.StyleDefault.Foreground(w.theme.HelpSelectedFg).Background(w.theme.HelpBg)
 		}
 		putString(screen, maxX, maxY, panelX+4, panelY+panelH-2, topic.Links[idx].Text, style)
+	}
+}
+
+// drawBlockCommandsPage renderiza a página "Block commands" com o título em botão 3D.
+// A linha 1 do tópico é substituída visualmente por um helpHeaderButton (cyan/preto/sombra),
+// mantendo o estilo Turbo Pascal. As demais linhas usam drawLine normalmente.
+func (w *helpWindow) drawBlockCommandsPage(screen tcell.Screen, maxX, maxY, x, y, width, height int, topic *HelpTopic) {
+	startY := y
+	contentHeight := height
+	if len(w.content.BreadcrumbTrail()) > 1 {
+		crumb := w.content.BreadcrumbText()
+		putString(screen, maxX, maxY, x, y, crumb, tcell.StyleDefault.Foreground(vgaBlack).Background(w.theme.HelpBg))
+		startY = y + 1
+		contentHeight--
+		if contentHeight < 0 {
+			contentHeight = 0
+		}
+	}
+
+	const titleRow = 1 // a linha 1 do tópico contém o texto do título
+
+	lines := w.content.GetPagedContent(w.offsetRow, contentHeight)
+	titleScreenRow := -1
+	for i, line := range lines {
+		actualRow := w.offsetRow + i
+		screenRow := startY + i
+		if actualRow == titleRow {
+			titleScreenRow = screenRow // marca para desenhar o botão depois
+		} else {
+			w.drawLine(screen, maxX, maxY, x, screenRow, width, line, actualRow, topic)
+		}
+	}
+	// Desenha o botão 3D por último para que sua sombra não seja sobrescrita por drawLine.
+	if titleScreenRow >= 0 {
+		btn := newHelpHeaderButton("Block Commands", vgaBlack, w.theme.HelpBg, vgaDarkGray)
+		btn.draw(screen, maxX, maxY, x+2, titleScreenRow, w.theme.HelpBg)
 	}
 }
 

@@ -11,13 +11,25 @@ import (
 type editorWindow struct {
 	*tview.Box
 	editor           *tview.TextArea
+	app              *App   // referência à aplicação (para diálogos e status)
 	theme            Theme
 	fileName         string // base name (exibido na barra de título)
 	filePath         string // caminho completo (vazio = arquivo não salvo ainda)
 	isTokenized      bool   // true = arquivo original era tokenizado MSX-BASIC
 	number           int
 	onClose          func()
+	onExitToMenu     func() // Ctrl+K D — foca a barra de menu
 	highlightEnabled bool
+
+	// Comandos de bloco (estilo Turbo Pascal)
+	blkBeginRow int    // linha do início do bloco (-1 = não marcado)
+	blkBeginCol int    // coluna do início do bloco (rune index)
+	blkEndRow   int    // linha do fim do bloco (-1 = não marcado)
+	blkEndCol   int    // coluna do fim do bloco
+	blkVisible  bool   // exibir highlight do bloco
+	blkClip     string // clipboard interno para operações de bloco
+	waitingK    bool   // recebeu Ctrl+K, aguardando segunda tecla
+	waitingQ    bool   // recebeu Ctrl+Q, aguardando segunda tecla
 
 	// Posição e tamanho da janela flutuante (gerenciados por nós, não pelo tview layout)
 	winX, winY int
@@ -50,13 +62,21 @@ func newEditorWindow(theme Theme, fileName string, number int) *editorWindow {
 	editor.SetPlaceholderStyle(tcell.StyleDefault.Foreground(theme.EditorFg).Background(theme.EditorBg))
 	editor.SetBackgroundColor(theme.EditorBg)
 
-	return &editorWindow{
-		Box:    tview.NewBox().SetBackgroundColor(theme.EditorBg),
-		editor: editor,
-		theme:  theme,
-		fileName: fileName,
-		number:   number,
+	ew := &editorWindow{
+		Box:         tview.NewBox().SetBackgroundColor(theme.EditorBg),
+		editor:      editor,
+		theme:       theme,
+		fileName:    fileName,
+		number:      number,
+		blkBeginRow: -1,
+		blkEndRow:   -1,
 	}
+	// Integra clipboard do editor com o clipboard de bloco
+	editor.SetClipboard(
+		func(text string) { ew.blkClip = text },
+		func() string { return ew.blkClip },
+	)
+	return ew
 }
 
 // zoomSymbol retorna o símbolo do botão de maximizar/restaurar.
@@ -124,6 +144,9 @@ func (w *editorWindow) Draw(screen tcell.Screen) {
 
 	if w.highlightEnabled {
 		w.applySyntaxHighlight(screen, innerX, innerY, innerWidth, innerHeight)
+	}
+	if w.blkVisible && w.blkBeginRow >= 0 && w.blkEndRow >= 0 {
+		w.applyBlockHighlight(screen, innerX, innerY, innerWidth, innerHeight)
 	}
 
 	// Botão fechar [■] — canto esquerdo do título
@@ -328,7 +351,18 @@ func (w *editorWindow) scrollHorizontal(mx, hLeft, hRight int) {
 }
 
 func (w *editorWindow) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return w.editor.InputHandler()
+	editorHandler := w.editor.InputHandler()
+	return func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		if event == nil {
+			return
+		}
+		if w.handleBlockKey(event, setFocus) {
+			return
+		}
+		if editorHandler != nil {
+			editorHandler(event, setFocus)
+		}
+	}
 }
 
 func (w *editorWindow) Focus(delegate func(p tview.Primitive)) {
