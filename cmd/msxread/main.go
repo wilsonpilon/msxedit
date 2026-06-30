@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "4.1.5"
+const Version = "4.1.7"
 
 // BuildID é injetado em tempo de compilação pelo build.ps1
 // via -ldflags "-X main.BuildID=<hex>". Valor "dev" indica build manual.
@@ -41,6 +41,7 @@ func main() {
 				Type:     reader.DocType(fileType),
 				TabSize:  tabSize,
 				Width:    width,
+				Version:  fullVersion,
 			})
 		},
 	}

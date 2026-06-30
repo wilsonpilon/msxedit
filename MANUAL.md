@@ -1,6 +1,6 @@
 # Manual de Operação e Compilação - MSXEdit
 
-Este documento descreve o estado operacional atual do MSXEdit na release `4.1.5`.
+Este documento descreve o estado operacional atual do MSXEdit na release `4.1.7`.
 
 ## Compilação
 
@@ -74,6 +74,7 @@ Ao iniciar, a aplicação sempre cria a **janela de edição 1**, mesmo quando n
 ### Atalhos atualmente funcionais
 
 - **F1**: abre a janela de `Help`
+- **F3**: abre o diálogo `Open File`
 - **Alt+F1**: volta ao tópico anterior dentro do `Help`
 - **Alt+Q**: fallback para voltar no `Help` em terminais que não repassam `Alt+F1`
 - **F10**: abre o menu `File`
@@ -155,6 +156,11 @@ Estado atual:
 - **`turboButton`**: botão reutilizável com hotkey destacada
 - **`compilerOptionsDialog`**: diálogo de opções com 9 radio buttons, 3 checkboxes em bolinha,
   área `Conditional defines:` e botões `OK`/`Cancel`/`Help`
+- **`openFileDialog`**: diálogo Open File estilo Turbo Pascal, ativado por `F3`:
+  - Campo `&Name` (fundo azul escuro) com seta `↓` verde para histórico de máscaras
+  - Lista `&Files` bicolunar em ciano, sem moldura; scrollbar horizontal azul
+  - Área de status: caminho+máscara / nome, tipo, data, hora, tamanho
+  - Botões `Open`, `Replace`, `Cancel`, `Help` — todos largura 11
 - **Modos de sombra do botão**:
   - `shadowModeTurboClassic`
   - `shadowModeFlat`
@@ -299,16 +305,21 @@ As configurações são salvas no mesmo diretório do executável (`msxread.json
 
 ### F1 — Overlay de ajuda
 
-Pressione `F1` para abrir o overlay de ajuda com todas as teclas listadas.
+Pressione `F1` para abrir o overlay de ajuda. O overlay exibe:
+
+- Cabeçalho "Welcome to MSX-Read v:(versão)" centralizado.
+- "MSX-Read Help Screen" e "Copyright (c) 1972,2026 Cybernostra, Inc.".
+- Lista completa de teclas disponíveis.
+
 Qualquer tecla fecha o overlay.
 
 ## Limitações atuais
 
 Os itens abaixo já possuem estrutura de configuração, UI ou roadmap, mas **ainda não estão concluídos**:
 
-- `Open` / `Save` completos no msxedit
+- leitura efetiva do arquivo selecionado no diálogo `Open File` (integração com editor)
+- fluxo de `Save` completo no msxedit
 - `Compile` / `Make`
-- syntax highlighting efetivo no editor
 - números de linha visíveis usando `show_line_numbers`
 
 Para detalhes objetivos de opções e comportamento, consulte [`REFERENCE.md`](REFERENCE.md).

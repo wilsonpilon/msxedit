@@ -24,6 +24,7 @@ type Viewer struct {
 	*tview.Box
 	theme      Theme
 	doc        *Document
+	version    string
 	offsetY    int
 	offsetX    int
 	showHelp   bool
@@ -57,11 +58,12 @@ type Viewer struct {
 }
 
 // NewViewer cria o visualizador com as configurações iniciais.
-func NewViewer(theme Theme, doc *Document, s Settings) *Viewer {
+func NewViewer(theme Theme, doc *Document, s Settings, version string) *Viewer {
 	return &Viewer{
 		Box:       tview.NewBox(),
 		theme:     theme,
 		doc:       doc,
+		version:   version,
 		bodyFgIdx: s.BodyFg,
 		bodyBgIdx: s.BodyBg,
 		wrapMode:  s.WrapMode,
@@ -541,8 +543,21 @@ func (v *Viewer) IsHelpOpen() bool { return v.showHelp }
 func (v *Viewer) CloseHelp()  { v.showHelp = false }
 
 func (v *Viewer) drawHelpOverlay(screen tcell.Screen, maxX, maxY, x, y, width, height int) {
+	const bw = 50
+	welcomeText := fmt.Sprintf("Welcome to MSX-Read v:%s", v.version)
+	innerWidth := bw - 2
+	pad := (innerWidth - len([]rune(welcomeText))) / 2
+	if pad < 0 {
+		pad = 0
+	}
+	centeredWelcome := strings.Repeat(" ", pad) + welcomeText
+
 	lines := []string{
-		"  msxread  –  Teclas de atalho   ",
+		centeredWelcome,
+		"",
+		"",
+		"  MSX-Read Help Screen",
+		"  Copyright (c) 1972,2026 Cybernostra, Inc.",
 		"",
 		"  F             Buscar texto",
 		"  N             Próxima ocorrência",
@@ -568,7 +583,6 @@ func (v *Viewer) drawHelpOverlay(screen tcell.Screen, maxX, maxY, x, y, width, h
 		"",
 		"  Qualquer tecla para fechar",
 	}
-	bw := 42
 	bh := len(lines) + 2
 	bx := x + (width-bw)/2
 	by := y + (height-bh)/2

@@ -1,7 +1,7 @@
 # Referência de Opções - MSXEdit
 
 Este arquivo resume as opções de linha de comando, chaves de configuração e comportamentos
-visíveis da release `4.1.5`.
+visíveis da release `4.1.7`.
 
 ## msxedit — Opções de Linha de Comando
 
@@ -206,6 +206,15 @@ janela do editor, popups, diálogos e janela de `Help`.
   - `showDialogoOKCentered(dialog, width, height)`
 - **`turboButton`**: Botão visual estilo Turbo Vision.
   - Modos de sombra: `shadowModeTurboClassic`, `shadowModeFlat`
+  - Largura determinada pelo texto plain (sem `&`): `len(" "+plain+" ") + 2`
+- **`openFileDialog`** (`open_file_dialog.go`): Diálogo Open File estilo Turbo Pascal.
+  - Campo `&Name` com fundo `vgaBlue`, seta `↓` verde para histórico de máscaras.
+  - Lista `&Files` sem moldura, fundo `vgaCyan`, 8 linhas, divider `│`, coluna de diretórios.
+  - Scrollbar horizontal em `vgaBlue` com `◄▒■►`.
+  - Área de status sem moldura, largura interna total: caminho+máscara / detalhes do item.
+  - Quatro botões de largura 11: `Open`, `Replace`, `Cancel`, `Help`.
+  - Ativado por `F3` e por `File → Open… F3`.
+  - `showOpenFileDialog(app, mask, onOpen, onReplace)`
 - **`compilerOptionsDialog`**: Diálogo completo de opções do compilador/interpretador.
   - 9 radio buttons em dois grupos (Basic Code / Others)
   - 3 checkboxes desenhados com marcador em bolinha (`[•]`)
@@ -241,6 +250,7 @@ Os demais itens de menu existem como estrutura visual/scaffold.
 ### Hotkeys implementadas
 
 - `F1`: abre o `Help`
+- `F3`: abre o diálogo `Open File`
 - `Alt+F1`: volta ao tópico anterior no `Help`
 - `Alt+Q`: fallback para voltar no `Help`
 - `F10`: abre o menu `File`
@@ -297,7 +307,8 @@ Detecção de fronteira de palavra garante que variáveis como `FORA` não sejam
 
 ## Recursos em andamento
 
-- fluxo de `Open` / `Save` no msxedit
+- leitura efetiva do arquivo selecionado no diálogo `Open File` (integração com editor)
+- fluxo de `Save` completo no msxedit
 - ações de `Compile` / `Make`
 - renderização de números de linha na margem do editor
 - submenus de `Environment`, `Window` e restantes de `Options`

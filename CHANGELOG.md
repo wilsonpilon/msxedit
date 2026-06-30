@@ -4,7 +4,44 @@ Todas as mudancas relevantes deste projeto serao documentadas neste arquivo.
 
 Formato baseado em categorias (`Added`, `Changed`, `Fixed`, `Docs`).
 
-## [4.2.0] - 2026-06-29
+## [4.1.7] - 2026-06-29
+
+### Added
+- **Diálogo Open File (F3) no MSXEdit** (`internal/tui/open_file_dialog.go`): janela modal
+  estilo Turbo Pascal com layout em blocos bem definidos:
+  - Campo `&Name` com fundo azul escuro (`vgaBlue`) e texto em ciano claro, seta `↓` verde
+    para histórico de máscaras (padrão `*.BAS`).
+  - Lista `&Files` bicolunar em ciano (`vgaCyan`), sem moldura, com divider `│` e coluna de
+    diretórios; 8 linhas visíveis.
+  - Barra de rolagem horizontal em azul com controles `◄▒■►` em ciano claro.
+  - Área de status completa (sem moldura, largura interna total): linha 1 = caminho+máscara;
+    linha 2 = nome do item, tipo (file/directory), data, hora e tamanho.
+  - Quatro botões Turbo Vision de largura igual (11 colunas): `Open`, `Replace`, `Cancel`, `Help`.
+  - Ativado por `F3` globalmente e por `File → Open… F3` no menu.
+- **Dropdown de histórico de máscaras** (`drawHistoryDropdown`): lista com moldura que aparece
+  abaixo do campo `&Name` ao pressionar a seta `↓`.
+- **Cabeçalho da tela de ajuda do MSX-Read** (`internal/reader/viewer.go`):
+  - Linha "Welcome to MSX-Read v:(versão)" centralizada na largura do painel.
+  - Duas linhas em branco de separação.
+  - "MSX-Read Help Screen" e "Copyright (c) 1972,2026 Cybernostra, Inc.".
+  - Lista completa de atalhos a seguir.
+
+### Changed
+- **Layout do diálogo Open File** refinado:
+  - Linha em branco entre o bloco Name/input e o bloco Files/lista.
+  - Linha em branco entre o bloco Files/scrollbar e o bloco Status.
+  - `Open` e `Replace` descem 1 linha para alinhar com o campo de entrada e o label `&Files`.
+  - `Cancel` e `Help` reposicionados acima da área de status.
+  - Altura do diálogo ajustada para 19 linhas (terminando logo após o bloco de status).
+  - Todos os quatro botões com mesmo texto plain de 7 caracteres → largura 11 idêntica.
+- Versão geral elevada para `4.1.7` em ambos os binários (`msxedit` e `msxread`).
+
+### Docs
+- `README.md`, `MANUAL.md`, `REFERENCE.md`, `OUTLINE.md` atualizados com o diálogo Open File,
+  melhorias do MSX-Read e nova versão.
+- Imagem `images/MSX-Read-01.png` incluída no README.
+
+## [4.1.5] - 2026-06-29
 
 ### Added
 - **`msxread`** — novo utilitário visualizador de textos, par do `msxedit`, no estilo do

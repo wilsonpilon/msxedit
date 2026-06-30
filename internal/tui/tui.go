@@ -115,6 +115,12 @@ func (a *App) Run(filePath string) error {
 			a.showHelpWindow()
 			return nil
 		}
+		if event.Key() == tcell.KeyF3 && event.Modifiers() == 0 {
+			showOpenFileDialog(a, "*.BAS",
+				func(path string) { a.openFile(path) },
+				func(path string) { a.openFile(path) })
+			return nil
+		}
 		if menu.handleHotkey(event) {
 			return nil
 		}
@@ -144,6 +150,12 @@ func (a *App) Run(filePath string) error {
 
 func (a *App) showFileMenu() {
 	list := tview.NewList().
+		AddItem(" [red]O[-]pen...         F3", "", 0, func() {
+			a.Pages.RemovePage("file_menu")
+			showOpenFileDialog(a, "*.BAS",
+				func(path string) { a.openFile(path) },
+				func(path string) { a.openFile(path) })
+		}).
 		AddItem(" ──────────────────", "", 0, nil).
 		AddItem(" E[red]x[-]it       Alt-X", "", 0, func() {
 			a.Application.Stop()
@@ -194,7 +206,7 @@ func (a *App) showFileMenu() {
 			AddItem(nil, 0, 1, false)
 	}
 
-	a.Pages.AddPage("file_menu", modal(list, 24, 4), true, true)
+	a.Pages.AddPage("file_menu", modal(list, 24, 6), true, true)
 	a.Application.SetFocus(list)
 
 	list.SetDoneFunc(func() {
@@ -322,6 +334,15 @@ func (a *App) getNextWindowID() int {
 // releaseWindowID marca um ID como disponível para reutilização
 func (a *App) releaseWindowID(id int) {
 	delete(a.UsedWindowIDs, id)
+}
+
+// openFile carrega um arquivo no editor ativo (ou no primeiro editor disponível)
+func (a *App) openFile(path string) {
+	if len(a.Editors) > 0 && a.ActiveEditor >= 0 && a.ActiveEditor < len(a.Editors) {
+		ed := a.Editors[a.ActiveEditor]
+		ed.fileName = path
+		a.Application.SetFocus(ed)
+	}
 }
 
 // showHelpWindow abre uma janela de Help

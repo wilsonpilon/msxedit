@@ -12,7 +12,8 @@ type Options struct {
 	FilePath string
 	Type     DocType
 	TabSize  int
-	Width    int // largura máxima para quebra de linha em markdown (0 = sem limite)
+	Width    int    // largura máxima para quebra de linha em markdown (0 = sem limite)
+	Version  string // versão do programa, exibida na tela de ajuda
 }
 
 // Run carrega o documento e executa a interface do visualizador.
@@ -25,7 +26,7 @@ func Run(opts Options) error {
 	app      := tview.NewApplication()
 	settings := LoadSettings()
 	theme    := DefaultTheme()
-	viewer   := NewViewer(theme, doc, settings)
+	viewer   := NewViewer(theme, doc, settings, opts.Version)
 	viewer.SetOnExit(func() { app.Stop() })
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
