@@ -274,6 +274,7 @@ func (d *compilerOptionsDialog) InputHandler() func(event *tcell.EventKey, setFo
 			switch r {
 			case 'o':
 				d.focusIndex = compilerOptionsFocusOK
+				d.app.CompilerMode = d.radioIndex
 				d.close()
 				return
 			case 'c':
@@ -403,6 +404,7 @@ func (d *compilerOptionsDialog) activateFocused() {
 	case d.focusIndex >= 9 && d.focusIndex <= 11:
 		d.checkboxes[d.focusIndex-9] = !d.checkboxes[d.focusIndex-9]
 	case d.focusIndex == compilerOptionsFocusOK:
+		d.app.CompilerMode = d.radioIndex
 		d.close()
 	case d.focusIndex == compilerOptionsFocusCancel:
 		d.close()

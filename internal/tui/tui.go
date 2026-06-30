@@ -21,6 +21,7 @@ type App struct {
 	Theme        Theme
 	NextWindowID int
 	UsedWindowIDs map[int]bool
+	CompilerMode  int // 0 = MSX-BASIC (default), espelha radioIndex do CompilerOptionsDialog
 }
 
 type checkerboardDesktop struct {
@@ -113,6 +114,10 @@ func (a *App) Run(filePath string) error {
 		}
 		if event.Key() == tcell.KeyF1 && event.Modifiers() == 0 {
 			a.showHelpWindow()
+			return nil
+		}
+		if event.Key() == tcell.KeyF2 && event.Modifiers() == 0 {
+			a.showSaveAs()
 			return nil
 		}
 		if event.Key() == tcell.KeyF3 && event.Modifiers() == 0 {
@@ -334,6 +339,18 @@ func (a *App) getNextWindowID() int {
 // releaseWindowID marca um ID como disponível para reutilização
 func (a *App) releaseWindowID(id int) {
 	delete(a.UsedWindowIDs, id)
+}
+
+// showSaveAs abre o diálogo "Save File As" para o editor ativo.
+func (a *App) showSaveAs() {
+	name := ""
+	if len(a.Editors) > 0 && a.ActiveEditor >= 0 && a.ActiveEditor < len(a.Editors) {
+		fn := a.Editors[a.ActiveEditor].fileName
+		if fn != "" && fn != "Sem Nome" {
+			name = fn
+		}
+	}
+	showSaveFileDialog(a, name)
 }
 
 // openFile carrega um arquivo no editor ativo (ou no primeiro editor disponível)

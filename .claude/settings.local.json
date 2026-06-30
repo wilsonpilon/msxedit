@@ -26,7 +26,9 @@
       "PowerShell(Get-Content *)",
       "PowerShell(Remove-Item *)",
       "Read(//home/wilso/**)",
-      "PowerShell(tmux *)"
+      "PowerShell(tmux *)",
+      "PowerShell(head *)",
+      "Bash(go run *)"
     ]
   }
 }

@@ -104,8 +104,8 @@ func defaultMenus(app *App) []MenuDefinition {
 			Items: []MenuEntry{
 				{Label: "&New"},
 				{Label: "&Open...", Shortcut: "[F3]"},
-				{Label: "&Save", Shortcut: "[F2]"},
-				{Label: "Save &as..."},
+				{Label: "&Save", Shortcut: "[F2]", Action: func() { app.showSaveAs() }},
+				{Label: "Save &as...", Action: func() { app.showSaveAs() }},
 				{Label: "Save a&ll"},
 				{Separator: true},
 				{Label: "&Change dir..."},
