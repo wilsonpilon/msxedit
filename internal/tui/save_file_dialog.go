@@ -835,9 +835,12 @@ func showSaveFileDialog(app *App, initialName string) {
 			return
 		}
 
-		// Atualiza o nome do arquivo no editor ativo
+		// Atualiza nome, caminho e formato no editor ativo
 		if len(app.Editors) > 0 && app.ActiveEditor >= 0 && app.ActiveEditor < len(app.Editors) {
-			app.Editors[app.ActiveEditor].fileName = filepath.Base(path)
+			ed := app.Editors[app.ActiveEditor]
+			ed.fileName = filepath.Base(path)
+			ed.filePath = path
+			ed.isTokenized = tokenized
 		}
 	}
 
@@ -860,5 +863,59 @@ func showSaveFileDialog(app *App, initialName string) {
 		AddItem(nil, 0, 1, false)
 
 	app.Pages.AddPage("save_file", container, true, true)
+	app.Application.SetFocus(dlg)
+}
+
+// showSaveFileDialogForEditor abre o Save As para um editor específico (usado pelo Save All).
+// onDone é chamado após o diálogo fechar (salvo ou cancelado) para encadear o próximo.
+func showSaveFileDialogForEditor(app *App, ed *editorWindow, onDone func()) {
+	dlg := newSaveFileDialog(app, "")
+
+	dlg.onSave = func(path string, tokenized bool) {
+		text := ed.editor.GetText()
+		var data []byte
+		if tokenized {
+			var err error
+			data, err = basic.Tokenize(text)
+			if err != nil {
+				if app.StatusBar != nil {
+					app.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao tokenizar: %v[-]", err))
+				}
+				return
+			}
+		} else {
+			data = []byte(text)
+		}
+		if err := os.WriteFile(path, data, 0644); err != nil {
+			if app.StatusBar != nil {
+				app.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao salvar: %v[-]", err))
+			}
+			return
+		}
+		ed.fileName = filepath.Base(path)
+		ed.filePath = path
+		ed.isTokenized = tokenized
+	}
+
+	dlg.onClose = func() {
+		if len(app.Editors) > 0 && app.ActiveEditor >= 0 && app.ActiveEditor < len(app.Editors) {
+			app.Application.SetFocus(app.Editors[app.ActiveEditor])
+		} else if app.Editor != nil {
+			app.Application.SetFocus(app.Editor)
+		}
+		if onDone != nil {
+			onDone()
+		}
+	}
+
+	container := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().
+			AddItem(nil, 0, 1, false).
+			AddItem(dlg, saveFileDlgW, 0, true).
+			AddItem(nil, 0, 1, false), saveFileDlgH, 0, true).
+		AddItem(nil, 0, 1, false)
+
+	app.Pages.AddPage(dlg.pageName, container, true, true)
 	app.Application.SetFocus(dlg)
 }

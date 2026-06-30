@@ -2,10 +2,23 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
+	"msxedit/internal/basic"
 )
+
+// PrinterConfig armazena as preferências de impressão.
+type PrinterConfig struct {
+	WrapColumn   int    // coluna de quebra de linha (0 = desativado)
+	LinesPerPage int    // linhas por página
+	LineNumbers  bool   // imprimir números de linha
+	FontSize     int    // tamanho da fonte em pontos (6, 8, 10, 12)
+	FontName     string // nome da fonte
+}
 
 type App struct {
 	Application  *tview.Application
@@ -21,7 +34,8 @@ type App struct {
 	Theme        Theme
 	NextWindowID int
 	UsedWindowIDs map[int]bool
-	CompilerMode  int // 0 = MSX-BASIC (default), espelha radioIndex do CompilerOptionsDialog
+	CompilerMode  int          // 0 = MSX-BASIC (default), espelha radioIndex do CompilerOptionsDialog
+	Printer       PrinterConfig // configurações de impressão
 }
 
 type checkerboardDesktop struct {
@@ -117,7 +131,7 @@ func (a *App) Run(filePath string) error {
 			return nil
 		}
 		if event.Key() == tcell.KeyF2 && event.Modifiers() == 0 {
-			a.showSaveAs()
+			a.showSave()
 			return nil
 		}
 		if event.Key() == tcell.KeyF3 && event.Modifiers() == 0 {
@@ -153,141 +167,78 @@ func (a *App) Run(filePath string) error {
 	return a.Application.SetRoot(a.Pages, true).Run()
 }
 
-func (a *App) showFileMenu() {
-	list := tview.NewList().
-		AddItem(" [red]O[-]pen...         F3", "", 0, func() {
-			a.Pages.RemovePage("file_menu")
-			showOpenFileDialog(a, "*.BAS",
-				func(path string) { a.openFile(path) },
-				func(path string) { a.openFile(path) })
-		}).
-		AddItem(" ──────────────────", "", 0, nil).
-		AddItem(" E[red]x[-]it       Alt-X", "", 0, func() {
-			a.Application.Stop()
-		})
-
-	list.SetBorder(true).
-		SetBorderStyle(tcell.StyleDefault.Foreground(a.Theme.PopupBorderFg).Background(a.Theme.PopupBg)).
-		SetBorderColor(a.Theme.PopupBorderFg)
-
-	list.SetBackgroundColor(a.Theme.PopupBg)
-	list.SetMainTextColor(a.Theme.PopupFg)
-	list.SetSelectedBackgroundColor(a.Theme.PopupSelectedBg)
-	list.SetSelectedTextColor(a.Theme.PopupSelectedFg)
-	list.ShowSecondaryText(false)
-	list.SetHighlightFullLine(true)
-
-	// Habilitar cores dinâmicas para o destaque da letra
-	list.SetSelectedStyle(tcell.StyleDefault.Background(a.Theme.PopupSelectedBg).Foreground(a.Theme.PopupSelectedFg))
-	list.SetMainTextStyle(tcell.StyleDefault.Background(a.Theme.PopupBg).Foreground(a.Theme.PopupFg))
-
-	// Captura de teclas interna do menu para atalhos sem Alt
-	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyRune {
-			switch event.Rune() {
-			case 'x', 'X':
-				a.Application.Stop()
-				return nil
-			}
-		}
-		return event
-	})
-
-	// Sombras e Posicionamento
-	modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		shadow := tview.NewBox().SetBackgroundColor(a.Theme.ShadowBg)
-
-		return tview.NewFlex().
-			AddItem(nil, 2, 0, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 1, 0, false).
-				AddItem(tview.NewFlex().
-					AddItem(p, width, 0, true).
-					AddItem(shadow, 1, 0, false), height, 0, true).
-				AddItem(tview.NewFlex().
-					AddItem(nil, 1, 0, false).
-					AddItem(shadow, width, 0, false), 1, 0, false).
-				AddItem(nil, 0, 1, false), width+1, 1, true).
-			AddItem(nil, 0, 1, false)
-	}
-
-	a.Pages.AddPage("file_menu", modal(list, 24, 6), true, true)
-	a.Application.SetFocus(list)
-
-	list.SetDoneFunc(func() {
-		a.Pages.RemovePage("file_menu")
-		a.Application.SetFocus(a.Editor)
-	})
+// showChangeDir abre o diálogo "Change Directory".
+func (a *App) showChangeDir() {
+	showChangeDirDialog(a)
 }
 
-func (a *App) showHelpMenu() {
-	list := tview.NewList().
-		AddItem(" ──────────────────", "", 0, nil).
-		AddItem(" [red]C[-]ontents", "", 0, func() {
-			a.Pages.RemovePage("help_menu")
-			a.showHelpWindow()
-		}).
-		AddItem(" [red]A[-]bout", "", 0, func() {
-			a.Pages.RemovePage("help_menu")
-			a.showAbout()
-		})
+// showPrinterSetup abre o diálogo "Printer Setup".
+func (a *App) showPrinterSetup() {
+	showPrinterSetupDialog(a)
+}
 
-	list.SetBorder(true).
-		SetBorderStyle(tcell.StyleDefault.Foreground(a.Theme.PopupBorderFg).Background(a.Theme.PopupBg)).
-		SetBorderColor(a.Theme.PopupBorderFg)
-
-	list.SetBackgroundColor(a.Theme.PopupBg)
-	list.SetMainTextColor(a.Theme.PopupFg)
-	list.SetSelectedBackgroundColor(a.Theme.PopupSelectedBg)
-	list.SetSelectedTextColor(a.Theme.PopupSelectedFg)
-	list.ShowSecondaryText(false)
-	list.SetHighlightFullLine(true)
-
-	// Habilitar cores dinâmicas para o destaque da letra
-	list.SetSelectedStyle(tcell.StyleDefault.Background(a.Theme.PopupSelectedBg).Foreground(a.Theme.PopupSelectedFg))
-	list.SetMainTextStyle(tcell.StyleDefault.Background(a.Theme.PopupBg).Foreground(a.Theme.PopupFg))
-
-	// Captura de teclas interna do menu para atalhos sem Alt
-	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyRune {
-			switch event.Rune() {
-			case 'c', 'C':
-				a.Pages.RemovePage("help_menu")
-				a.showHelpWindow()
-				return nil
-			case 'a', 'A':
-				a.Pages.RemovePage("help_menu")
-				a.showAbout()
-				return nil
-			}
+// showSaveAll salva todos os editores abertos.
+// Editores com caminho definido são salvos direto; sem nome abrem Save As sequencialmente.
+func (a *App) showSaveAll() {
+	savedCount := 0
+	for _, ed := range a.Editors {
+		if ed.filePath == "" {
+			continue
 		}
-		return event
-	})
-
-	// Sombras e Posicionamento (ajustado para ficar sob Help)
-	modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		shadow := tview.NewBox().SetBackgroundColor(a.Theme.ShadowBg)
-
-		return tview.NewFlex().
-			AddItem(nil, 32, 0, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 1, 0, false).
-				AddItem(tview.NewFlex().
-					AddItem(p, width, 0, true).
-					AddItem(shadow, 1, 0, false), height, 0, true).
-				AddItem(tview.NewFlex().
-					AddItem(nil, 1, 0, false).
-					AddItem(shadow, width, 0, false), 1, 0, false).
-				AddItem(nil, 0, 1, false), width+1, 1, true).
-			AddItem(nil, 0, 1, false)
+		text := ed.editor.GetText()
+		var data []byte
+		if ed.isTokenized {
+			var tokErr error
+			data, tokErr = basic.Tokenize(text)
+			if tokErr != nil {
+				if a.StatusBar != nil {
+					a.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao tokenizar %s: %v[-]", ed.fileName, tokErr))
+				}
+				continue
+			}
+		} else {
+			data = []byte(text)
+		}
+		if err := os.WriteFile(ed.filePath, data, 0644); err != nil {
+			if a.StatusBar != nil {
+				a.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao salvar %s: %v[-]", ed.fileName, err))
+			}
+		} else {
+			savedCount++
+		}
 	}
 
-	a.Pages.AddPage("help_menu", modal(list, 24, 5), true, true)
-	a.Application.SetFocus(list)
+	var queue []*editorWindow
+	for _, ed := range a.Editors {
+		if ed.filePath == "" {
+			queue = append(queue, ed)
+		}
+	}
 
-	list.SetDoneFunc(func() {
-		a.Pages.RemovePage("help_menu")
-		a.Application.SetFocus(a.Editor)
+	if len(queue) == 0 {
+		if a.StatusBar != nil {
+			a.StatusBar.SetText(fmt.Sprintf(" %d arquivo(s) salvo(s).", savedCount))
+		}
+		return
+	}
+	a.saveNextUnnamed(queue, 0, savedCount)
+}
+
+// saveNextUnnamed exibe o diálogo Save As para cada editor sem nome da fila, em sequência.
+func (a *App) saveNextUnnamed(queue []*editorWindow, idx int, alreadySaved int) {
+	if idx >= len(queue) {
+		if a.StatusBar != nil {
+			a.StatusBar.SetText(fmt.Sprintf(" %d arquivo(s) salvo(s).", alreadySaved))
+		}
+		return
+	}
+	ed := queue[idx]
+	showSaveFileDialogForEditor(a, ed, func() {
+		extra := 0
+		if ed.filePath != "" {
+			extra = 1
+		}
+		a.saveNextUnnamed(queue, idx+1, alreadySaved+extra)
 	})
 }
 
@@ -301,7 +252,7 @@ func (a *App) showAbout() {
 func (a *App) showCompilerInterpreterOptions() {
 	dialog := newCompilerOptionsDialog(a)
 	const dlgW = 72
-	const dlgH = 24
+	const dlgH = 18
 	showCompilerOptionsDialogCentered(dialog, dlgW, dlgH)
 }
 
@@ -353,12 +304,80 @@ func (a *App) showSaveAs() {
 	showSaveFileDialog(a, name)
 }
 
-// openFile carrega um arquivo no editor ativo (ou no primeiro editor disponível)
+// openFile carrega um arquivo no editor ativo.
+// Detecta arquivos tokenizados MSX-BASIC (0xFF) e detokeniza em memória.
 func (a *App) openFile(path string) {
-	if len(a.Editors) > 0 && a.ActiveEditor >= 0 && a.ActiveEditor < len(a.Editors) {
-		ed := a.Editors[a.ActiveEditor]
-		ed.fileName = path
-		a.Application.SetFocus(ed)
+	if len(a.Editors) == 0 || a.ActiveEditor < 0 || a.ActiveEditor >= len(a.Editors) {
+		return
+	}
+	ed := a.Editors[a.ActiveEditor]
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if a.StatusBar != nil {
+			a.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao abrir: %v[-]", err))
+		}
+		return
+	}
+	if basic.IsTokenized(data) {
+		text, err2 := basic.DetokenizeToText(data)
+		if err2 != nil {
+			if a.StatusBar != nil {
+				a.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao detokenizar: %v[-]", err2))
+			}
+			return
+		}
+		ed.editor.SetText(text, true)
+		ed.isTokenized = true
+		a.CompilerMode = 0 // MSX-BASIC
+	} else {
+		ed.editor.SetText(string(data), true)
+		ed.isTokenized = false
+	}
+	ed.filePath = path
+	ed.fileName = filepath.Base(path)
+	a.Application.SetFocus(ed)
+}
+
+// showOpenFile abre o diálogo "Open a File".
+func (a *App) showOpenFile() {
+	showOpenFileDialog(a, "*.BAS",
+		func(path string) { a.openFile(path) },
+		func(path string) { a.openFile(path) })
+}
+
+// showSave salva o arquivo ativo diretamente se já tem caminho; caso contrário abre "Save As".
+// Re-tokeniza arquivos MSX-BASIC tokenizados antes de gravar.
+func (a *App) showSave() {
+	if len(a.Editors) == 0 || a.ActiveEditor < 0 || a.ActiveEditor >= len(a.Editors) {
+		return
+	}
+	ed := a.Editors[a.ActiveEditor]
+	if ed.filePath == "" {
+		a.showSaveAs()
+		return
+	}
+	text := ed.editor.GetText()
+	var data []byte
+	if ed.isTokenized {
+		var err error
+		data, err = basic.Tokenize(text)
+		if err != nil {
+			if a.StatusBar != nil {
+				a.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao tokenizar: %v[-]", err))
+			}
+			return
+		}
+	} else {
+		data = []byte(text)
+	}
+	if err := os.WriteFile(ed.filePath, data, 0644); err != nil {
+		if a.StatusBar != nil {
+			a.StatusBar.SetText(fmt.Sprintf(" [red]Erro ao salvar: %v[-]", err))
+		}
+		return
+	}
+	if a.StatusBar != nil {
+		a.StatusBar.SetText(fmt.Sprintf(" Salvo: %s", ed.filePath))
 	}
 }
 

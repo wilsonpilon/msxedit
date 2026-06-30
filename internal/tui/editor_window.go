@@ -12,7 +12,9 @@ type editorWindow struct {
 	*tview.Box
 	editor           *tview.TextArea
 	theme            Theme
-	fileName         string
+	fileName         string // base name (exibido na barra de título)
+	filePath         string // caminho completo (vazio = arquivo não salvo ainda)
+	isTokenized      bool   // true = arquivo original era tokenizado MSX-BASIC
 	number           int
 	onClose          func()
 	highlightEnabled bool
