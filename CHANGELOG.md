@@ -4,6 +4,90 @@ Todas as mudancas relevantes deste projeto serao documentadas neste arquivo.
 
 Formato baseado em categorias (`Added`, `Changed`, `Fixed`, `Docs`).
 
+## [4.1.9] - 2026-07-01
+
+### Added
+- **Múltiplas janelas de edição** no MSXEdit: `File → New` (`internal/tui/tui.go`) cria uma nova
+  janela em branco em cascata a partir da janela ativa, com ID próprio, clipboard compartilhado
+  entre todas as janelas e ativação automática ao ganhar foco.
+  - `Alt+F3` fecha a janela de edição ativa; fechar a última janela aberta **não** encerra mais o
+    programa — o desktop quadriculado fica visível e `File → New`/`Open…` continuam disponíveis.
+  - As janelas de edição/ajuda/clipboard agora vivem como páginas independentes de `a.Pages`
+    sobre o desktop, em vez de uma única página fixa.
+- **Menu `Edit` funcional** (`internal/tui/menu.go`): `Undo` (`Alt+BkSp`), `Redo` (só pelo menu —
+  `Ctrl+Y` já é usado por Delete line), `Cut` (`Shift+Del`), `Copy` (`Ctrl+Ins`), `Paste`
+  (`Shift+Ins`), `Clear` (`Ctrl+Del`) e `Show clipboard`.
+  - **Clipboard compartilhado** (`app.Clipboard`) entre todas as janelas de edição.
+  - **Janela "Show clipboard"**: exibe/edita o clipboard compartilhado ao vivo, com borda amarela
+    distintiva; qualquer Copy/Cut/Paste em qualquer janela reflete nela imediatamente.
+- **Menu `Search` funcional** (`internal/tui/menu.go`, `search.go`, `find_dialog.go`,
+  `replace_dialog.go`, `goto_line.go`, `goto_line_dialog.go`):
+  - **`Find...`**: diálogo com campo de texto com histórico (seta `↓`), opções `Case sensitive`,
+    `Whole words only`, `Regular expression`, grupos `Direction` (Forward/Backward), `Scope`
+    (Global/Selected text) e `Origin` (From cursor/Entire scope). Busca real no editor ativo,
+    seleciona a ocorrência encontrada e avisa na barra de status quando o texto não é encontrado
+    ou quando a busca reinicia do começo (wrap).
+  - **`Search again`** (também `Ctrl+L`): repete a última busca a partir da posição atual do
+    cursor; sem busca anterior, abre o diálogo `Find`.
+  - **`Go to line number...`**: diálogo com campo numérico e opção "linha do MSX-Basic" (procura
+    pelo número de linha do BASIC no início da linha, ex.: `10 PRINT...`) versus linha de texto
+    (1-based). Move o cursor e avisa na barra de status se a linha não existir.
+  - **`Replace...`**: diálogo completo (texto a buscar, novo texto, `Prompt on replace`, mesmas
+    opções/grupos do `Find`, botões `Ok`/`Change all`/`Cancel`/`Help`) que já captura todas as
+    opções e o histórico de ambos os campos — a substituição efetiva do texto ainda não está
+    implementada (ver `Docs`/limitações).
+  - `Show last compiler error`, `Find error...` e `Find procedure...` permanecem placeholders.
+- **Seleção de texto com Shift e mouse** (`internal/tui/selection.go`): `Shift`+setas/`Home`/`End`/
+  `PgUp`/`PgDn` estende uma seleção a partir de um ponto-âncora; arrastar o mouse com o botão
+  esquerdo pressionado faz o mesmo. Ambas reaproveitam o destaque e os comandos de bloco/clipboard
+  já existentes (`Ctrl+K C/V/Y`, `Ctrl+Ins`, `Shift+Del`, `Shift+Ins`, `Ctrl+Del`).
+- **Atalhos de movimentação de cursor estilo WordStar/Turbo** (`internal/tui/selection.go`):
+  `Ctrl+S/D` (caractere esq./dir.), `Ctrl+A/F` (palavra esq./dir.), `Ctrl+E/X` (linha cima/baixo),
+  `Ctrl+W/Z` (rolar tela cima/baixo sem mover o cursor), `Ctrl+R/C` (página cima/baixo) e
+  `Ctrl+Up`/`Ctrl+Down` (meia tela cima/baixo).
+- **Comandos de inserção/remoção** (`internal/tui/insert_delete.go`): modo `Insert`/`Overwrite`
+  (`Ctrl+V` ou `Ins` sem modificador alterna), `Ctrl+N` (insere linha em branco), `Ctrl+Y` (remove
+  a linha inteira), `Ctrl+Q Y` (remove até o fim da linha), `Ctrl+G` (apaga caractere à direita,
+  equivalente a `Del`), `Ctrl+T` (apaga palavra à direita).
+- **Comandos diversos** (`internal/tui/misc_commands.go`):
+  - **Place markers** `Ctrl+K 0-9` (grava posição) / `Ctrl+Q 0-9` (vai até a posição gravada).
+  - **Restore line** (`Ctrl+Q L`): desfaz todas as edições feitas na linha atual desde que o
+    cursor chegou nela, independentemente do histórico normal de Undo.
+  - **Tab mode** (`Ctrl+O T`): alterna entre inserir caractere de tabulação (padrão) ou espaços
+    até a próxima parada de 8 colunas.
+  - **Auto indent** (`Ctrl+O I`): ao pressionar Enter, repete a indentação (espaços/tabs iniciais)
+    da linha anterior.
+  - **Ctrl+character prefix** (`Ctrl+P`): insere o byte de controle (1–26) correspondente à
+    próxima tecla `Ctrl+letra` pressionada, no estilo WordStar/Turbo.
+  - **`Ctrl+K S`**: salva o arquivo sem sair do editor (mesmo fluxo de `F2`).
+  - **`Ctrl+F1`** ("Language help"): abre o `Help` já navegado até o tópico `Reserved Words`.
+- **Undo/Redo** (`internal/tui/block_commands.go`): `Edit → Undo`/`Alt+BkSp` e `Edit → Redo`
+  disparam o undo/redo nativo do `tview.TextArea`.
+- Novos tópicos de `Help` com conteúdo real, deixando de ser placeholders: **Cursor-movement
+  commands**, **Insert & Delete commands** e **Miscelaneous commands** — todos com título em
+  botão 3D, no mesmo estilo já usado por **Block commands** (`helpHeaderButtonTitles` em
+  `internal/tui/help_window.go` generaliza `drawBlockCommandsPage` para `drawCommandsHeaderPage`).
+
+### Changed
+- **`Ctrl+K`** ganhou `S` (Save) e `0-9` (set marker); barra de status do prefixo atualizada.
+- **`Ctrl+Q`** ganhou `Y` (delete to EOL), `L` (restore line), `F` (Find), `A` (Replace) e `0-9`
+  (goto marker); barra de status do prefixo atualizada.
+- **Novos prefixos `Ctrl+O`** (Tab mode / Auto indent) e **`Ctrl+P`** (Ctrl+character literal).
+- **`File → New`** deixou de ser um item inerte e agora cria uma janela de edição real.
+- Fechar o menu (`Esc` ou clique fora) e fechar o `Help` agora devolvem o foco para a **janela de
+  edição ativa** (`a.focusActiveEditor()`), em vez de sempre para `a.Editor` (que passa a
+  referenciar apenas a janela ativa mais recente, não uma janela fixa única).
+- Corrigido o texto do tópico de Help **"Reserved Worlds" → "Reserved Words"** (erro de digitação)
+  em `internal/tui/help_content.go` e `HELP.md`.
+- Versão geral elevada para `4.1.9` em ambos os binários (`msxedit` e `msxread`).
+
+### Docs
+- `README.md`, `MANUAL.md`, `REFERENCE.md`, `OUTLINE.md`, `HELP.md` atualizados com múltiplas
+  janelas de edição, menus `Edit`/`Search` funcionais, clipboard compartilhado, seleção de texto,
+  novos atalhos de edição/navegação estilo WordStar e a nova versão.
+- Registrado como limitação conhecida: o diálogo `Replace` já captura texto/opções/histórico, mas
+  ainda não executa a substituição no texto do editor.
+
 ## [4.1.7] - 2026-06-29
 
 ### Added

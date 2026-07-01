@@ -49,15 +49,24 @@ The top menu bar follows the classic Turbo style and can be opened by keyboard o
 Implemented hot keys:
 
 - `F1`: open Help
+- `F3`: open the `Open File` dialog
+- `Alt+F3`: close the active editor window
+- `Ctrl+F1`: "Language help" — open Help already navigated to `Reserved Words`
+- `Ctrl+L`: repeat the last search (`Search again`)
 - `F10`: open the `File` menu
 - `Alt+X`: exit MSXEdit
 - `Alt+F`, `Alt+E`, `Alt+S`, `Alt+R`, `Alt+C`, `Alt+D`, `Alt+T`, `Alt+O`, `Alt+W`, `Alt+H`: open the matching menu
 
 Current menu status:
 
-- `File`: active menu, with `Exit` implemented
+- `File`: active menu, with `New` (cascading editor window), `Open…` and `Exit` implemented
+- `Edit`: active menu, with `Undo`, `Redo`, `Cut`, `Copy`, `Paste`, `Clear` and `Show clipboard`
+  implemented — clipboard is now shared across all editor windows
+- `Search`: active menu, with `Find...`, `Replace...`, `Search again` and `Go to line number...`
+  implemented (`Replace...` still does not perform the actual substitution); `Show last compiler
+  error`, `Find error...` and `Find procedure...` remain placeholders
 - `Help`: active menu, with `Contents` and `About` implemented
-- `Edit`, `Search`, `Run`, `Compile`, `Debug`, `Tools`, `Window`: visible and navigable, still scaffolded with placeholder content
+- `Run`, `Compile`, `Debug`, `Tools`, `Window`: visible and navigable, still scaffolded with placeholder content
 - `Options`: now opens `Compiler/Interpreter Options` with radio buttons, checkboxes, `Conditional defines:`, and `OK`/`Cancel`/`Help`
 
 The status bar also displays legacy labels for `F2 Save`, `F3 Open`, `Alt+F9 Compile` and `F9 Make`, but those workflows are not yet wired to concrete actions.
@@ -85,10 +94,12 @@ References:
 
 Built-in components already used by the application:
 
-- custom editor window with double border
+- custom editor window with double border, supporting multiple simultaneous windows
 - `dialogoOK` reusable dialog
 - `turboButton` reusable Turbo-style button
 - `compilerOptionsDialog` for `Compiler/Interpreter Options`
+- `findDialog`, `replaceDialog` and `gotoLineDialog` for the `Search` menu
+- shared clipboard window (`Show clipboard`)
 - `About` dialog
 - `Help` window with markdown topic loading and fallback internal content
 
@@ -252,36 +263,66 @@ References:
 
 ## Cursor-movement commands
 
-The editor and Help window already support cursor/scroll movement through standard keyboard navigation.
+  Cursor Movement Commands
 
-In Help specifically, arrow keys, page navigation and Home/End are implemented.
+  Character left      Ctrl+S or Left arrow
+  Character right     Ctrl+D or Right arrow
+  Word left           Ctrl+A or Ctrl+Left arrow
+  Word right          Ctrl+F or Ctrl+Right arrow
+  Line up             Ctrl+E or Up arrow
+  Line down           Ctrl+X or Down arrow
+  Scroll up           Ctrl+W
+  Scroll down         Ctrl+Z
+  Page up             Ctrl+R or PgUp
+  Page down           Ctrl+C or PgDn
 
 References:
-- [Editor Commands](#editor-commands)
 - [Help Contents](#contents)
+- [Editor Commands](#editor-commands)
 
 ## Insert & Delete commands
 
-Text insertion and deletion are currently handled by the underlying text area component used by the editor window.
+  Insert & Delete Commands
 
-Higher-level editing commands and retro key maps are still candidates for future implementation.
+  Insert mode on/off       Ctrl+V or Ins
+  Insert line              Ctrl+N
+  Delete line               Ctrl+Y
+  Delete to end of line    Ctrl+Q Y
+  Delete character left    Ctrl+H or Backspace
+  Delete character         Ctrl+G or Del
+  Delete word right         Ctrl+T
 
 References:
-- [Editor Commands](#editor-commands)
 - [Help Contents](#contents)
+- [Editor Commands](#editor-commands)
 
 ## Miscelaneous commands
 
-Other current interaction points include:
+  Miscellaneous Editor Commands
 
-- `About` dialog
-- menu navigation
-- window closing by `[■]`
-- mouse support in Help and menus
+  Menu bar                    F10
+  Save and edit                Ctrl+K S or F2
+  Open file                   F3
+  Close active window          Alt+F3
+
+  Tab                          Ctrl+I or Tab
+  Tab mode                     Ctrl+O T
+  Auto indent on/off            Ctrl+O I
+  Restore line                 Ctrl+Q L
+
+  Set place marker(0-9)         Ctrl+K n (n = 0..9)
+  Find plc. marker(0-9)         Ctrl+Q n (n = 0..9)
+  Language help                Ctrl+F1
+  Ctrl+character prefix         Ctrl+P
+
+  Find                         Ctrl+Q F
+  Find & replace                Ctrl+Q A
+  Repeat last find              Ctrl+L
+  Abort operation               Esc
 
 References:
-- [Editor Commands](#editor-commands)
 - [Help Contents](#contents)
+- [Editor Commands](#editor-commands)
 
 ## Syntax highlighting
 

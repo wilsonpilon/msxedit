@@ -102,7 +102,7 @@ func defaultMenus(app *App) []MenuDefinition {
 		{
 			Title: "&File",
 			Items: []MenuEntry{
-				{Label: "&New"},
+				{Label: "&New", Action: func() { app.showNewEditor() }},
 				{Label: "&Open...", Shortcut: "[F3]", Action: func() { app.showOpenFile() }},
 				{Label: "&Save", Shortcut: "[F2]", Action: func() { app.showSave() }},
 				{Label: "Save &as...", Action: func() { app.showSaveAs() }},
@@ -115,8 +115,57 @@ func defaultMenus(app *App) []MenuDefinition {
 				{Label: "E&xit", Shortcut: "[Alt]+[X]", Action: func() { app.Application.Stop() }},
 			},
 		},
-		{Title: "&Edit", Items: []MenuEntry{{Label: "No options yet"}}},
-		{Title: "&Search", Items: []MenuEntry{{Label: "No options yet"}}},
+		{
+			Title: "&Edit",
+			Items: []MenuEntry{
+				{Label: "&Undo", Shortcut: "[Alt]+[BkSp]", Action: func() {
+					if ed := app.activeEditor(); ed != nil {
+						ed.cmdUndo()
+					}
+				}},
+				{Label: "&Redo", Action: func() {
+					if ed := app.activeEditor(); ed != nil {
+						ed.cmdRedo()
+					}
+				}},
+				{Separator: true},
+				{Label: "Cu&t", Shortcut: "[Shift]+[Del]", Action: func() {
+					if ed := app.activeEditor(); ed != nil {
+						ed.cmdCutToClipboard()
+					}
+				}},
+				{Label: "&Copy", Shortcut: "[Ctrl]+[Ins]", Action: func() {
+					if ed := app.activeEditor(); ed != nil {
+						ed.cmdCopyToClipboard()
+					}
+				}},
+				{Label: "&Paste", Shortcut: "[Shift]+[Ins]", Action: func() {
+					if ed := app.activeEditor(); ed != nil {
+						ed.cmdPasteFromClipboard()
+					}
+				}},
+				{Label: "C&lear", Shortcut: "[Ctrl]+[Del]", Action: func() {
+					if ed := app.activeEditor(); ed != nil {
+						ed.cmdDeleteBlock()
+					}
+				}},
+				{Separator: true},
+				{Label: "&Show clipboard", Action: func() { app.showClipboardWindow() }},
+			},
+		},
+		{
+			Title: "&Search",
+			Items: []MenuEntry{
+				{Label: "&Find...", Action: func() { app.showFindDialog() }},
+				{Label: "&Replace...", Action: func() { app.showReplaceDialog() }},
+				{Label: "&Search again", Action: func() { app.searchAgain() }},
+				{Separator: true},
+				{Label: "&Go to line number...", Action: func() { app.showGotoLineDialog() }},
+				{Label: "Sho&w last compiler error"},
+				{Label: "Find &error..."},
+				{Label: "Find &procedure..."},
+			},
+		},
 		{Title: "&Run", Items: []MenuEntry{{Label: "No options yet"}}},
 		{Title: "&Compile", Items: []MenuEntry{{Label: "No options yet"}}},
 		{Title: "&Debug", Items: []MenuEntry{{Label: "No options yet"}}},
@@ -189,7 +238,7 @@ func (mc *menuController) close() {
 	mc.active = false
 	mc.removePopup()
 	mc.renderBar()
-	mc.app.Application.SetFocus(mc.app.Editor)
+	mc.app.focusActiveEditor()
 }
 
 func (mc *menuController) toggleFromHotkey(index int) {

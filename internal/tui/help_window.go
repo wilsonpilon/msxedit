@@ -125,8 +125,8 @@ func (w *helpWindow) drawContent(screen tcell.Screen, maxX, maxY, x, y, width, h
 		w.drawEditorCommandsSubWindow(screen, maxX, maxY, x, y, width, height, topic)
 		return
 	}
-	if topic.ID == "block_commands" {
-		w.drawBlockCommandsPage(screen, maxX, maxY, x, y, width, height, topic)
+	if headerTitle, ok := helpHeaderButtonTitles[topic.ID]; ok {
+		w.drawCommandsHeaderPage(screen, maxX, maxY, x, y, width, height, topic, headerTitle)
 		return
 	}
 
@@ -216,10 +216,21 @@ func (w *helpWindow) drawEditorCommandsSubWindow(screen tcell.Screen, maxX, maxY
 	}
 }
 
-// drawBlockCommandsPage renderiza a página "Block commands" com o título em botão 3D.
-// A linha 1 do tópico é substituída visualmente por um helpHeaderButton (cyan/preto/sombra),
-// mantendo o estilo Turbo Pascal. As demais linhas usam drawLine normalmente.
-func (w *helpWindow) drawBlockCommandsPage(screen tcell.Screen, maxX, maxY, x, y, width, height int, topic *HelpTopic) {
+// helpHeaderButtonTitles mapeia tópicos cuja linha 1 deve ser substituída por
+// um botão 3D de título (estilo "Block Commands"), para o texto do botão.
+var helpHeaderButtonTitles = map[string]string{
+	"block_commands":           "Block Commands",
+	"cursor_movement_commands": "Cursor Movement Commands",
+	"insert_delete_commands":   "Insert & Delete Commands",
+	"miscelaneous_commands":    "Miscellaneous Editor Commands",
+}
+
+// drawCommandsHeaderPage renderiza uma página de comandos (ex.: "Block
+// commands", "Cursor-movement commands") com o título em botão 3D. A linha 1
+// do tópico é substituída visualmente por um helpHeaderButton (cyan/preto/
+// sombra), mantendo o estilo Turbo Pascal. As demais linhas usam drawLine
+// normalmente.
+func (w *helpWindow) drawCommandsHeaderPage(screen tcell.Screen, maxX, maxY, x, y, width, height int, topic *HelpTopic, headerTitle string) {
 	startY := y
 	contentHeight := height
 	if len(w.content.BreadcrumbTrail()) > 1 {
@@ -247,7 +258,7 @@ func (w *helpWindow) drawBlockCommandsPage(screen tcell.Screen, maxX, maxY, x, y
 	}
 	// Desenha o botão 3D por último para que sua sombra não seja sobrescrita por drawLine.
 	if titleScreenRow >= 0 {
-		btn := newHelpHeaderButton("Block Commands", vgaBlack, w.theme.HelpBg, vgaDarkGray)
+		btn := newHelpHeaderButton(headerTitle, vgaBlack, w.theme.HelpBg, vgaDarkGray)
 		btn.draw(screen, maxX, maxY, x+2, titleScreenRow, w.theme.HelpBg)
 	}
 }

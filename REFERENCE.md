@@ -1,7 +1,7 @@
 # Referência de Opções - MSXEdit
 
 Este arquivo resume as opções de linha de comando, chaves de configuração e comportamentos
-visíveis da release `4.1.7`.
+visíveis da release `4.1.9`.
 
 ## msxedit — Opções de Linha de Comando
 
@@ -227,6 +227,21 @@ janela do editor, popups, diálogos e janela de `Help`.
   - Maximizar/restaurar com botão `[▲]`/`[▼]`
   - Scrollbars H/V clicáveis
   - `highlightEnabled bool` — ativa syntax highlighting MSX-BASIC
+  - `isClipboard bool` — marca a janela especial "Clipboard" (borda amarela)
+  - Suporta múltiplas instâncias simultâneas (`app.Editors`), cada uma com clipboard
+    compartilhado, place markers, restore-line, tab mode e auto indent próprios
+- **`findDialog`** (`find_dialog.go`): `FindParams{Text, CaseSensitive, WholeWords, Regex,
+  Backward, SelectedOnly, EntireScope}`. `showFindDialogCentered(dialog)`.
+- **`replaceDialog`** (`replace_dialog.go`): `ReplaceParams{FindParams, NewText,
+  PromptOnReplace, ReplaceAll}`. `ReplaceAll` é `true` quando confirmado via `Change all`, `false`
+  via `Ok`. `showReplaceDialogCentered(dialog)`.
+- **`gotoLineDialog`** (`goto_line_dialog.go`): `GotoLineParams{Line, MSXBasic}`.
+  `showGotoLineDialogCentered(dialog)`.
+- **`historyField`** (`text_field.go`): campo de texto de uma linha com histórico navegável pela
+  seta `↓`, compartilhado pelos três diálogos acima.
+- **`drawGroupBox` / `drawCheckbox` / `drawRadio`** (`dialog_widgets.go`): desenham caixas com
+  título embutido na borda (`┌─Title─┐`), checkboxes `[x]` e radio buttons `(x)` com acelerador
+  destacado — reaproveitados por `findDialog`/`replaceDialog`/`gotoLineDialog`.
 
 ## Menus e Atalhos (msxedit)
 
@@ -241,21 +256,37 @@ janela do editor, popups, diálogos e janela de `Help`.
 
 ### Menus com ação efetiva hoje
 
-- **`File`**: `Exit`
+- **`File`**: `New` (janela em cascata), `Open…`, `Exit`
+- **`Edit`**: `Undo`, `Redo`, `Cut`, `Copy`, `Paste`, `Clear`, `Show clipboard`
+- **`Search`**: `Find...`, `Replace...`, `Search again`, `Go to line number...`
+  (`Show last compiler error`, `Find error...`, `Find procedure...` seguem placeholder)
 - **`Options`**: `Compiler/Interpreter…` — abre diálogo de opções completo
 - **`Help`**: `Contents` (janela Help navegável) e `About`
 
-Os demais itens de menu existem como estrutura visual/scaffold.
+Os demais itens de menu (`Run`, `Compile`, `Debug`, `Tools`, `Window`) existem como estrutura
+visual/scaffold.
 
 ### Hotkeys implementadas
 
 - `F1`: abre o `Help`
 - `F3`: abre o diálogo `Open File`
+- `Alt+F3`: fecha a janela de edição ativa
 - `Alt+F1`: volta ao tópico anterior no `Help`
 - `Alt+Q`: fallback para voltar no `Help`
+- `Ctrl+F1`: "Language help" — abre o `Help` no tópico `Reserved Words`
+- `Ctrl+L`: `Search again`
 - `F10`: abre o menu `File`
 - `Alt+X`: sai da aplicação
 - `Alt+F/E/S/R/C/D/T/O/W/H`: abre o menu correspondente
+
+### Comandos de edição (janela do editor)
+
+Ver a tabela completa em [`MANUAL.md`](MANUAL.md#edição--atalhos-estilo-wordstarturbo):
+movimentação de cursor (`Ctrl+S/D/A/F/E/X/W/Z/R/C`), seleção com Shift/mouse, Insert/Overwrite
+(`Ins`/`Ctrl+V`), inserir/apagar linha (`Ctrl+N`/`Ctrl+Y`), apagar até o fim da linha (`Ctrl+Q Y`),
+apagar palavra à direita (`Ctrl+T`), prefixos de bloco `Ctrl+K`/`Ctrl+Q` (agora com `S`, `0-9`,
+`Y`, `L`, `F`, `A`), `Ctrl+O T`/`Ctrl+O I` (tab mode / auto indent) e `Ctrl+P` (código de controle
+literal).
 
 ## Janela de Help (msxedit)
 
@@ -308,7 +339,9 @@ Detecção de fronteira de palavra garante que variáveis como `FORA` não sejam
 ## Recursos em andamento
 
 - leitura efetiva do arquivo selecionado no diálogo `Open File` (integração com editor)
+- substituição efetiva de texto no diálogo `Replace` (opções/histórico já funcionam)
 - fluxo de `Save` completo no msxedit
 - ações de `Compile` / `Make`
 - renderização de números de linha na margem do editor
 - submenus de `Environment`, `Window` e restantes de `Options`
+- `Search → Show last compiler error`, `Find error...` e `Find procedure...`

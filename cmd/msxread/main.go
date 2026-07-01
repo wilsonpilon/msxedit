@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const Version = "4.1.7"
+const Version = "4.1.9"
 
 // BuildID é injetado em tempo de compilação pelo build.ps1
 // via -ldflags "-X main.BuildID=<hex>". Valor "dev" indica build manual.

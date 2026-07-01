@@ -163,14 +163,16 @@ func (w *editorWindow) applyBlockHighlight(screen tcell.Screen, innerX, innerY, 
 
 // ── Dispatcher principal de teclas de bloco ─────────────────────────────────
 
-func (w *editorWindow) handleBlockKey(event *tcell.EventKey, _ func(tview.Primitive)) bool {
+func (w *editorWindow) handleBlockKey(event *tcell.EventKey, setFocus func(tview.Primitive)) bool {
 	key := event.Key()
 	mod := event.Modifiers()
 
-	// Esc cancela o prefixo Ctrl+K / Ctrl+Q pendente
-	if (w.waitingK || w.waitingQ) && key == tcell.KeyEscape {
+	// Esc cancela o prefixo Ctrl+K / Ctrl+Q / Ctrl+O / Ctrl+P pendente
+	if (w.waitingK || w.waitingQ || w.waitingO || w.waitingP) && key == tcell.KeyEscape {
 		w.waitingK = false
 		w.waitingQ = false
+		w.waitingO = false
+		w.waitingP = false
 		return true
 	}
 
@@ -178,7 +180,12 @@ func (w *editorWindow) handleBlockKey(event *tcell.EventKey, _ func(tview.Primit
 	if w.waitingK {
 		w.waitingK = false
 		if key == tcell.KeyRune {
-			switch unicode.ToLower(event.Rune()) {
+			r := unicode.ToLower(event.Rune())
+			if r >= '0' && r <= '9' {
+				w.cmdSetMarker(int(r - '0'))
+				return true
+			}
+			switch r {
 			case 'b':
 				w.cmdMarkBegin()
 				return true
@@ -221,6 +228,11 @@ func (w *editorWindow) handleBlockKey(event *tcell.EventKey, _ func(tview.Primit
 			case 'l':
 				w.cmdMarkLine()
 				return true
+			case 's':
+				if w.app != nil {
+					w.app.showSave()
+				}
+				return true
 			}
 		}
 		return false // segunda tecla desconhecida: passa ao editor
@@ -230,30 +242,88 @@ func (w *editorWindow) handleBlockKey(event *tcell.EventKey, _ func(tview.Primit
 	if w.waitingQ {
 		w.waitingQ = false
 		if key == tcell.KeyRune {
-			switch unicode.ToLower(event.Rune()) {
+			r := unicode.ToLower(event.Rune())
+			if r >= '0' && r <= '9' {
+				w.cmdGotoMarker(int(r - '0'))
+				return true
+			}
+			switch r {
 			case 'b':
 				w.cmdGotoBegin()
 				return true
 			case 'k':
 				w.cmdGotoEnd()
 				return true
+			case 'y':
+				w.cmdDeleteToEndOfLine()
+				return true
+			case 'l':
+				w.cmdRestoreLine()
+				return true
+			case 'f':
+				if w.app != nil {
+					w.app.showFindDialog()
+				}
+				return true
+			case 'a':
+				if w.app != nil {
+					w.app.showReplaceDialog()
+				}
+				return true
 			}
 		}
 		return false
+	}
+
+	// ── Sequência Ctrl+O ────────────────────────────────────────────────────
+	if w.waitingO {
+		w.waitingO = false
+		if key == tcell.KeyRune {
+			switch unicode.ToLower(event.Rune()) {
+			case 't':
+				w.cmdToggleTabMode()
+				return true
+			case 'i':
+				w.cmdToggleAutoIndent()
+				return true
+			}
+		}
+		return false
+	}
+
+	// ── Sequência Ctrl+P (insere o código de controle da próxima tecla) ──────
+	if w.waitingP {
+		w.waitingP = false
+		w.cmdInsertLiteralControl(event)
+		return true
 	}
 
 	// ── Prefixos ─────────────────────────────────────────────────────────────
 	if key == tcell.KeyCtrlK {
 		w.waitingK = true
 		if w.app != nil && w.app.StatusBar != nil {
-			w.app.StatusBar.SetText("^K B:Begin K:End T:Word C:Copy V:Move Y:Del R:Read W:Write H:Hide P:Print I:Indent U:Unind D:Menu L:Line")
+			w.app.StatusBar.SetText("^K B:Begin K:End T:Word C:Copy V:Move Y:Del R:Read W:Write H:Hide P:Print I:Indent U:Unind D:Menu L:Line S:Save 0-9:Marker")
 		}
 		return true
 	}
 	if key == tcell.KeyCtrlQ {
 		w.waitingQ = true
 		if w.app != nil && w.app.StatusBar != nil {
-			w.app.StatusBar.SetText("^Q B:GoBegin  K:GoEnd")
+			w.app.StatusBar.SetText("^Q B:GoBegin K:GoEnd Y:DelToEOL L:Restore F:Find A:Replace 0-9:GoMarker")
+		}
+		return true
+	}
+	if key == tcell.KeyCtrlO {
+		w.waitingO = true
+		if w.app != nil && w.app.StatusBar != nil {
+			w.app.StatusBar.SetText("^O T:TabMode I:AutoIndent")
+		}
+		return true
+	}
+	if key == tcell.KeyCtrlP {
+		w.waitingP = true
+		if w.app != nil && w.app.StatusBar != nil {
+			w.app.StatusBar.SetText("^P: pressione Ctrl+letra para inserir o codigo de controle")
 		}
 		return true
 	}
@@ -268,6 +338,9 @@ func (w *editorWindow) handleBlockKey(event *tcell.EventKey, _ func(tview.Primit
 			w.cmdPasteFromClipboard()
 			return true
 		}
+		// Insert simples (sem modificador): alterna modo Insert/Overwrite.
+		w.cmdToggleOverwrite()
+		return true
 	}
 	if key == tcell.KeyDelete {
 		if mod&tcell.ModShift != 0 {
@@ -278,6 +351,31 @@ func (w *editorWindow) handleBlockKey(event *tcell.EventKey, _ func(tview.Primit
 			w.cmdDeleteBlock()
 			return true
 		}
+	}
+
+	// ── Atalho de undo (Alt+BkSp) ────────────────────────────────────────────
+	if (key == tcell.KeyBackspace || key == tcell.KeyBackspace2) && mod&tcell.ModAlt != 0 {
+		w.cmdUndo()
+		return true
+	}
+
+	// ── Insert & Delete commands (Help > Editor Commands) ───────────────────
+	switch key {
+	case tcell.KeyCtrlV: // Insert mode on/off
+		w.cmdToggleOverwrite()
+		return true
+	case tcell.KeyCtrlN: // Insert line
+		w.cmdInsertLine()
+		return true
+	case tcell.KeyCtrlY: // Delete line
+		w.cmdDeleteLine()
+		return true
+	case tcell.KeyCtrlG: // Delete character (equivalente a Del)
+		w.cmdDeleteCharRight(setFocus)
+		return true
+	case tcell.KeyCtrlT: // Delete word right
+		w.cmdDeleteWordRight()
+		return true
 	}
 
 	return false
@@ -632,34 +730,72 @@ func (w *editorWindow) cmdExitToMenu() {
 
 // ── Clipboard ────────────────────────────────────────────────────────────────
 
+// setClipboard atualiza o clipboard compartilhado da aplicação (visível para
+// todas as janelas de edição e refletido na janela "Show clipboard").
+// Sem app associado (ex.: uso isolado/testes), cai para o clipboard local.
+func (w *editorWindow) setClipboard(text string) {
+	w.blkClip = text
+	if w.app != nil {
+		w.app.Clipboard = text
+		w.app.syncClipboardWindow()
+	}
+}
+
+// getClipboard lê o clipboard compartilhado da aplicação, com fallback local.
+func (w *editorWindow) getClipboard() string {
+	if w.app != nil {
+		return w.app.Clipboard
+	}
+	return w.blkClip
+}
+
 func (w *editorWindow) cmdCopyToClipboard() {
 	if !w.blockValid() {
 		return
 	}
 	text := w.editor.GetText()
 	s, e := w.blockByteRange()
-	w.blkClip = text[s:e]
+	w.setClipboard(text[s:e])
 	w.restoreStatusBar()
 }
 
 func (w *editorWindow) cmdCutToClipboard() {
 	w.cmdCopyToClipboard()
-	if w.blkClip != "" {
+	if w.getClipboard() != "" {
 		w.cmdDeleteBlock()
 	}
 	w.restoreStatusBar()
 }
 
 func (w *editorWindow) cmdPasteFromClipboard() {
-	if w.blkClip == "" {
+	clip := w.getClipboard()
+	if clip == "" {
 		return
 	}
 	curOff := w.cursorByteOffset()
-	w.editor.Replace(curOff, curOff, w.blkClip)
+	w.editor.Replace(curOff, curOff, clip)
 	newText := w.editor.GetText()
-	pasteEnd := curOff + len(w.blkClip)
+	pasteEnd := curOff + len(clip)
 	w.blkBeginRow, w.blkBeginCol = byteOffsetToRowCol(newText, curOff)
 	w.blkEndRow, w.blkEndCol = byteOffsetToRowCol(newText, pasteEnd)
 	w.blkVisible = true
+	w.restoreStatusBar()
+}
+
+// ── Undo/Redo ────────────────────────────────────────────────────────────────
+// O tview.TextArea já implementa undo/redo internamente (Ctrl+Z / Ctrl+Y);
+// aqui apenas disparamos esses mesmos eventos a partir de outros atalhos/menu.
+
+func (w *editorWindow) cmdUndo() {
+	if handler := w.editor.InputHandler(); handler != nil {
+		handler(tcell.NewEventKey(tcell.KeyCtrlZ, 0, tcell.ModCtrl), func(tview.Primitive) {})
+	}
+	w.restoreStatusBar()
+}
+
+func (w *editorWindow) cmdRedo() {
+	if handler := w.editor.InputHandler(); handler != nil {
+		handler(tcell.NewEventKey(tcell.KeyCtrlY, 0, tcell.ModCtrl), func(tview.Primitive) {})
+	}
 	w.restoreStatusBar()
 }

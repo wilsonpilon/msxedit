@@ -33,7 +33,24 @@
       "Bash(grep -A 30 \"^func \\(t \\\\*TextArea\\) Replace\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
       "Bash(grep -A 15 \"^func \\(t \\\\*TextArea\\) GetSelection\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
       "Bash(grep -A 5 \"^func \\(t \\\\*TextArea\\) HasSelection\\\\|^func \\(t \\\\*TextArea\\) SetClipboard\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/rivo/tview@v0.42.0/textarea.go\")",
-      "Bash(grep \"KeyCtrl[KQD]\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/gdamore/tcell/v2@v2.13.10/key.go\")"
+      "Bash(grep \"KeyCtrl[KQD]\" \"$\\(go env GOPATH\\)/pkg/mod/github.com/gdamore/tcell/v2@v2.13.10/key.go\")",
+      "Bash(go list *)",
+      "Bash(tmux -V)",
+      "Bash(tmux ls *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(tmux kill-server *)",
+      "Bash(tmux has-session *)",
+      "Bash(echo \"newsession-exit:$?\")",
+      "Bash(echo \"ls-exit:$?\")",
+      "Bash(tmux -vv new-session -d -s dbgtest -x 80 -y 24 \"sleep 30\")",
+      "Bash(gofmt *)",
+      "Bash(git checkout *)",
+      "Bash(rm -f tmux-client-*.log tmux-out-*.log tmux-server-*.log)",
+      "PowerShell(git checkout *)",
+      "Bash(xargs grep -n \"func NewEventMouse\")",
+      "Bash(go doc *)",
+      "Bash(git status *)",
+      "Bash(./msxedit.exe --version)"
     ]
   }
 }

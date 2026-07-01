@@ -101,7 +101,7 @@ func (hc *HelpContent) initializeTopics() {
 		"",
 		"  ─────────────────────────────────────────────────────",
 		"",
-		"  Reserved Worlds",
+		"  Reserved Words",
 		"  Start-Up Options",
 		"  MSXgl",
 		"  Library",
@@ -116,7 +116,7 @@ func (hc *HelpContent) initializeTopics() {
 		{"Directives", "directives"},
 		{"Error Messages", "error_messages"},
 		{"Browser", "browser"},
-		{"Reserved Worlds", "reserved_worlds"},
+		{"Reserved Words", "reserved_words"},
 		{"Start-Up Options", "startup_options"},
 		{"MSXgl", "msxgl"},
 		{"Library", "library"},
@@ -227,6 +227,93 @@ func (hc *HelpContent) initializeTopics() {
 		}),
 	}
 
+	// ── Tópico: Cursor-movement Commands ──────────────────────────────────────
+	cursorCmdLines := []string{
+		"",
+		"  Cursor Movement Commands", // linha 1: renderizada como botão 3D em help_window.go
+		"",
+		"  Character left      Ctrl+S or Left arrow",
+		"  Character right     Ctrl+D or Right arrow",
+		"  Word left           Ctrl+A or Ctrl+Left arrow",
+		"  Word right          Ctrl+F or Ctrl+Right arrow",
+		"  Line up             Ctrl+E or Up arrow",
+		"  Line down           Ctrl+X or Down arrow",
+		"  Scroll up           Ctrl+W",
+		"  Scroll down         Ctrl+Z",
+		"  Page up             Ctrl+R or PgUp",
+		"  Page down           Ctrl+C or PgDn",
+		"",
+		"  Contents",
+	}
+	hc.topics["cursor_movement_commands"] = &HelpTopic{
+		ID:    "cursor_movement_commands",
+		Title: "Cursor-movement commands",
+		Lines: cursorCmdLines,
+		Links: buildLinks(cursorCmdLines, []linkDef{
+			{"Contents", "contents"},
+		}),
+	}
+
+	// ── Tópico: Insert & Delete Commands ──────────────────────────────────────
+	insertDeleteCmdLines := []string{
+		"",
+		"  Insert & Delete Commands", // linha 1: renderizada como botão 3D em help_window.go
+		"",
+		"  Insert mode on/off       Ctrl+V or Ins",
+		"  Insert line              Ctrl+N",
+		"  Delete line               Ctrl+Y",
+		"  Delete to end of line    Ctrl+Q Y",
+		"  Delete character left    Ctrl+H or Backspace",
+		"  Delete character         Ctrl+G or Del",
+		"  Delete word right         Ctrl+T",
+		"",
+		"  Contents",
+	}
+	hc.topics["insert_delete_commands"] = &HelpTopic{
+		ID:    "insert_delete_commands",
+		Title: "Insert & Delete commands",
+		Lines: insertDeleteCmdLines,
+		Links: buildLinks(insertDeleteCmdLines, []linkDef{
+			{"Contents", "contents"},
+		}),
+	}
+
+	// ── Tópico: Miscellaneous Editor Commands ─────────────────────────────────
+	miscCmdLines := []string{
+		"",
+		"  Miscellaneous Editor Commands", // linha 1: renderizada como botão 3D em help_window.go
+		"",
+		"  Menu bar                    F10",
+		"  Save and edit                Ctrl+K S or F2",
+		"  Open file                   F3",
+		"  Close active window          Alt+F3",
+		"",
+		"  Tab                          Ctrl+I or Tab",
+		"  Tab mode                     Ctrl+O T",
+		"  Auto indent on/off            Ctrl+O I",
+		"  Restore line                 Ctrl+Q L",
+		"",
+		"  Set place marker(0-9)         Ctrl+K n (n = 0..9)",
+		"  Find plc. marker(0-9)         Ctrl+Q n (n = 0..9)",
+		"  Language help                Ctrl+F1",
+		"  Ctrl+character prefix         Ctrl+P",
+		"",
+		"  Find                         Ctrl+Q F",
+		"  Find & replace                Ctrl+Q A",
+		"  Repeat last find              Ctrl+L",
+		"  Abort operation               Esc",
+		"",
+		"  Contents",
+	}
+	hc.topics["miscelaneous_commands"] = &HelpTopic{
+		ID:    "miscelaneous_commands",
+		Title: "Miscelaneous commands",
+		Lines: miscCmdLines,
+		Links: buildLinks(miscCmdLines, []linkDef{
+			{"Contents", "contents"},
+		}),
+	}
+
 	// ── Tópicos placeholder ───────────────────────────────────────────────────
 	type simpleTopic struct {
 		id    string
@@ -235,15 +322,12 @@ func (hc *HelpContent) initializeTopics() {
 	simple := []simpleTopic{
 		{"built_in", "Built-in"},
 		{"command_line", "Command Line"},
-		{"cursor_movement_commands", "Cursor-movement commands"},
 		{"debugging", "Debugging"},
 		{"directives", "Directives"},
 		{"error_messages", "Error Messages"},
 		{"extending_selected_blocks", "Extending Selected Blocks"},
-		{"insert_delete_commands", "Insert & Delete commands"},
 		{"browser", "Browser"},
-		{"miscelaneous_commands", "Miscelaneous commands"},
-		{"reserved_worlds", "Reserved Worlds"},
+		{"reserved_words", "Reserved Words"},
 		{"startup_options", "Start-Up Options"},
 		{"syntax_highlighting", "Syntax highlighting"},
 		{"msxgl", "MSXgl"},

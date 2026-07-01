@@ -19,7 +19,9 @@ type editorWindow struct {
 	number           int
 	onClose          func()
 	onExitToMenu     func() // Ctrl+K D — foca a barra de menu
+	onFocus          func() // chamado sempre que a janela recebe foco (marca como ativa)
 	highlightEnabled bool
+	isClipboard      bool // true = janela especial "Clipboard" (Edit > Show clipboard)
 
 	// Comandos de bloco (estilo Turbo Pascal)
 	blkBeginRow int    // linha do início do bloco (-1 = não marcado)
@@ -30,6 +32,24 @@ type editorWindow struct {
 	blkClip     string // clipboard interno para operações de bloco
 	waitingK    bool   // recebeu Ctrl+K, aguardando segunda tecla
 	waitingQ    bool   // recebeu Ctrl+Q, aguardando segunda tecla
+	waitingO    bool   // recebeu Ctrl+O, aguardando segunda tecla (Tab mode / Auto indent)
+	waitingP    bool   // recebeu Ctrl+P, aguardando a tecla cujo código de controle será inserido
+
+	tabInsertsSpaces bool // true = Tab insere espaços até a próxima parada; false (padrão) = caractere de tabulação
+	autoIndent       bool // true = Enter repete a indentação da linha anterior
+
+	placeMarkers  [10]placeMarker // Ctrl+K 0-9 / Ctrl+Q 0-9: marcadores de posição
+	restoreLineRow int            // linha cujo conteúdo original está em restoreLineText (-1 = nenhuma)
+	restoreLineText string        // conteúdo da linha restoreLineRow antes da edição atual
+
+	// Seleção de texto com Shift+navegação ou arraste do mouse (compartilha o
+	// destaque com blk*)
+	shiftSelecting bool // true enquanto uma seleção interativa está em andamento
+	selAnchorRow   int  // linha onde a seleção por teclado começou (ponto fixo)
+	selAnchorCol   int  // coluna onde a seleção por teclado começou (ponto fixo)
+	mouseSelecting bool // true enquanto o botão do mouse está pressionado arrastando
+
+	overwriteMode bool // true = modo Overwrite; false (padrão) = modo Insert
 
 	// Posição e tamanho da janela flutuante (gerenciados por nós, não pelo tview layout)
 	winX, winY int
@@ -63,18 +83,22 @@ func newEditorWindow(theme Theme, fileName string, number int) *editorWindow {
 	editor.SetBackgroundColor(theme.EditorBg)
 
 	ew := &editorWindow{
-		Box:         tview.NewBox().SetBackgroundColor(theme.EditorBg),
-		editor:      editor,
-		theme:       theme,
-		fileName:    fileName,
-		number:      number,
-		blkBeginRow: -1,
-		blkEndRow:   -1,
+		Box:            tview.NewBox().SetBackgroundColor(theme.EditorBg),
+		editor:         editor,
+		theme:          theme,
+		fileName:       fileName,
+		number:         number,
+		blkBeginRow:    -1,
+		blkEndRow:      -1,
+		restoreLineRow: -1,
 	}
-	// Integra clipboard do editor com o clipboard de bloco
+	for i := range ew.placeMarkers {
+		ew.placeMarkers[i].row = -1
+	}
+	// Integra clipboard nativo do TextArea com o clipboard compartilhado da aplicação
 	editor.SetClipboard(
-		func(text string) { ew.blkClip = text },
-		func() string { return ew.blkClip },
+		func(text string) { ew.setClipboard(text) },
+		func() string { return ew.getClipboard() },
 	)
 	return ew
 }
@@ -91,13 +115,15 @@ func (w *editorWindow) Draw(screen tcell.Screen) {
 	sw, sh := screen.Size()
 	w.lastScreenW, w.lastScreenH = sw, sh
 
-	// Inicializa posição no primeiro Draw, usando o rect fornecido pelo tview layout
+	// Inicializa posição no primeiro Draw, usando o rect fornecido pelo tview layout.
+	// Como a janela é uma página de nível superior (a.Pages), o rect recebido é a
+	// tela inteira — por isso reservamos a linha 0 (menu) e a última linha (status).
 	if !w.positioned {
 		px, py, pw, ph := w.GetRect()
 		w.winX = px + 2
-		w.winY = py
+		w.winY = py + 1
 		w.winW = pw - 4
-		w.winH = ph - 1
+		w.winH = ph - 3
 		w.savedX, w.savedY = w.winX, w.winY
 		w.savedW, w.savedH = w.winW, w.winH
 		w.positioned = true
@@ -109,7 +135,11 @@ func (w *editorWindow) Draw(screen tcell.Screen) {
 	}
 
 	maxX, maxY := sw, sh
-	frameStyle := tcell.StyleDefault.Foreground(w.theme.EditorBorderFg).Background(w.theme.EditorBg)
+	borderFg := w.theme.EditorBorderFg
+	if w.isClipboard {
+		borderFg = vgaYellow // marcação especial para a janela do Clipboard
+	}
+	frameStyle := tcell.StyleDefault.Foreground(borderFg).Background(w.theme.EditorBg)
 	bgStyle := tcell.StyleDefault.Foreground(w.theme.EditorFg).Background(w.theme.EditorBg)
 
 	// Preencher fundo da janela
@@ -356,9 +386,20 @@ func (w *editorWindow) InputHandler() func(event *tcell.EventKey, setFocus func(
 		if event == nil {
 			return
 		}
+		w.snapshotRestoreLine()
 		if w.handleBlockKey(event, setFocus) {
 			return
 		}
+		if w.handleNavigationKey(event, setFocus) {
+			return
+		}
+		if w.applyAutoIndent(event, setFocus) {
+			return
+		}
+		if w.applyTabMode(event) {
+			return
+		}
+		w.applyOverwrite(event)
 		if editorHandler != nil {
 			editorHandler(event, setFocus)
 		}
@@ -366,6 +407,9 @@ func (w *editorWindow) InputHandler() func(event *tcell.EventKey, setFocus func(
 }
 
 func (w *editorWindow) Focus(delegate func(p tview.Primitive)) {
+	if w.onFocus != nil {
+		w.onFocus()
+	}
 	w.editor.Focus(delegate)
 }
 
@@ -405,10 +449,18 @@ func (w *editorWindow) MouseHandler() func(action tview.MouseAction, event *tcel
 				w.clampSize()
 				return true, w
 			}
+			if w.mouseSelecting && inBounds {
+				// Arrastando o mouse com o botão pressionado: estende a seleção,
+				// deixando o próprio TextArea calcular a posição a partir do clique.
+				base(action, event, setFocus)
+				w.syncMouseSelection()
+				return true, w
+			}
 			return false, nil
 		}
 
 		if action == tview.MouseLeftUp {
+			w.mouseSelecting = false
 			if w.isDragging || w.isResizing {
 				w.isDragging = false
 				w.isResizing = false
@@ -450,7 +502,17 @@ func (w *editorWindow) MouseHandler() func(action tview.MouseAction, event *tcel
 				return true, w
 			}
 
-			// Clique na janela em geral: só transfere foco
+			// Clique na área de texto: posiciona o cursor via TextArea e inicia
+			// uma possível seleção por arraste (compartilha o destaque com blk*,
+			// igual à seleção por Shift+navegação).
+			if w.shiftSelecting {
+				w.shiftSelecting = false
+				w.clearBlock()
+			}
+			base(action, event, setFocus)
+			w.mouseSelecting = true
+			w.shiftSelecting = true
+			w.syncMouseSelection()
 			return true, w
 
 		case tview.MouseLeftClick:

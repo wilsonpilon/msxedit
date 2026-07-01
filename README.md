@@ -11,23 +11,47 @@ O projeto combina uma base visual inspirada em Turbo Vision, Norton Editor e fer
 
 ## Release atual
 
-- **Versão**: `4.1.7`
+- **Versão**: `4.1.9`
 - **Build ID**: gerado dinamicamente em hexadecimal UTC durante a execução/build.
 
-## Novidades da 4.1.7
+## Novidades da 4.1.9
 
-- **Diálogo Open File (F3)** no MSXEdit: janela estilo Turbo Pascal com campo `&Name` (fundo azul escuro), lista `&Files` bicoluna em ciano (sem moldura), barra de rolagem horizontal azul, área de status completa (caminho+máscara, item selecionado) e quatro botões 3D de largura igual: `Open`, `Replace`, `Cancel`, `Help`.
-- **Tela de ajuda do MSX-Read** aprimorada: cabeçalho com "Welcome to MSX-Read v:(versão)" centralizado, seguido de "MSX-Read Help Screen" e linha de copyright.
-- Layout do diálogo Open File refinado: espaçamento entre blocos Name/Files/Status, todos os botões com largura idêntica (11 colunas), Open e Replace alinhados com o campo de entrada.
+- **Múltiplas janelas de edição**: `File → New` cria janelas em cascata a partir da ativa;
+  `Alt+F3` fecha a janela ativa sem encerrar o programa (o desktop fica visível para `New`/`Open`).
+- **Menu `Edit` funcional**: `Undo`/`Redo`, `Cut`/`Copy`/`Paste`/`Clear` e `Show clipboard` — um
+  clipboard agora é compartilhado entre todas as janelas de edição, com janela dedicada para
+  visualizá-lo/editá-lo.
+- **Menu `Search` funcional**: diálogos `Find...`, `Replace...` e `Go to line number...`, mais
+  `Search again` (`Ctrl+L`). O `Find` já busca de verdade (case sensitive, whole words, regex,
+  direção, escopo); o `Replace` captura as mesmas opções mas ainda não substitui o texto.
+- **Seleção de texto** com `Shift`+navegação ou arraste do mouse, reaproveitando os comandos de
+  bloco/clipboard existentes.
+- **Atalhos de edição estilo WordStar/Turbo**: movimentação de cursor (`Ctrl+S/D/A/F/E/X/W/Z/R/C`),
+  modo Insert/Overwrite (`Ins`/`Ctrl+V`), inserir/remover linha (`Ctrl+N`/`Ctrl+Y`), apagar até o
+  fim da linha (`Ctrl+Q Y`), apagar palavra à direita (`Ctrl+T`), place markers (`Ctrl+K`/`Ctrl+Q`
+  `0-9`), restore line (`Ctrl+Q L`), tab mode e auto indent (`Ctrl+O T`/`Ctrl+O I`) e o prefixo
+  `Ctrl+P` para inserir códigos de controle literais.
+- Novos tópicos reais de `Help`: **Cursor-movement commands**, **Insert & Delete commands** e
+  **Miscelaneous commands**, com título em botão 3D como o já existente `Block commands`.
 
 ## O que já está implementado
 
 - **Janela de edição retrô no startup**: a aplicação abre automaticamente a primeira janela de edição, com moldura dupla, botão `[■]`, título centralizado, identificador numérico e barras de rolagem desenhadas manualmente.
+- **Múltiplas janelas de edição**: `File → New` cria janelas adicionais em cascata, cada uma com
+  clipboard compartilhado e ID próprio; `Alt+F3` ou `[■]` fecham a janela ativa sem encerrar o
+  programa.
 - **Desktop quadriculado estilo DOS**: o fundo da aplicação usa renderização dedicada com padrão VGA clássico.
 - **Barra de menus Turbo-like**: menus superiores com navegação por `Alt+Letra`, `F10`, setas, `Enter` e clique do mouse.
 - **Estrutura atual de menus**:
-  - Ativos: `File` (Open F3, Exit), `Options` (Compiler/Interpreter…), `Help` (Contents, About)
-  - Estruturais / placeholder visual: `Edit`, `Search`, `Run`, `Compile`, `Debug`, `Tools`, `Window`
+  - Ativos: `File` (New, Open F3, Exit), `Edit` (Undo/Redo, Cut/Copy/Paste/Clear, Show clipboard),
+    `Search` (Find, Replace, Search again, Go to line number), `Options` (Compiler/Interpreter…),
+    `Help` (Contents, About)
+  - Estruturais / placeholder visual: `Run`, `Compile`, `Debug`, `Tools`, `Window`
+- **Edição estilo WordStar/Turbo**: comandos de cursor, seleção com Shift/mouse, place markers,
+  restore line, tab mode, auto indent, modo Insert/Overwrite e o prefixo `Ctrl+P` para códigos de
+  controle literais — veja [`MANUAL.md`](MANUAL.md) para a lista completa de atalhos.
+- **Busca e navegação por linha**: diálogos `Find`, `Replace` e `Go to line number` (texto ou
+  número de linha do MSX-Basic), com histórico compartilhado entre eles.
 - **Diálogo Open File (F3)**:
   - Ativado por `F3` globalmente ou pelo menu `File → Open… F3`
   - Campo `&Name` com fundo azul escuro e seta `↓` verde para histórico de máscaras
@@ -57,10 +81,14 @@ O projeto combina uma base visual inspirada em Turbo Vision, Norton Editor e fer
 
 ### Em funcionamento hoje
 
-- edição de texto em `TextArea`
+- edição de texto em `TextArea`, com múltiplas janelas simultâneas
 - janelas e diálogos customizados
-- menu superior com dropdown
+- menu superior com dropdown, incluindo `Edit` e `Search` funcionais
 - diálogo Open File (F3) — navegação de arquivos e diretórios
+- diálogos `Find`, `Replace` (busca) e `Go to line number`
+- clipboard compartilhado entre janelas, com janela `Show clipboard`
+- seleção de texto por teclado (Shift) e mouse
+- atalhos de edição estilo WordStar/Turbo (cursor, markers, tab mode, auto indent, overwrite)
 - janela de `Help`
 - `About`
 - temas e configuração base
@@ -69,6 +97,7 @@ O projeto combina uma base visual inspirada em Turbo Vision, Norton Editor e fer
 ### Em evolução / ainda não finalizado
 
 - leitura efetiva do arquivo selecionado no diálogo Open (integração com editor)
+- substituição efetiva de texto no diálogo `Replace` (opções e histórico já funcionam)
 - fluxo completo de `Save`
 - ações reais de `Compile` / `Make`
 - renderização de números de linha usando `show_line_numbers`

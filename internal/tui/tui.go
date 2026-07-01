@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -36,6 +37,20 @@ type App struct {
 	UsedWindowIDs map[int]bool
 	CompilerMode  int          // 0 = MSX-BASIC (default), espelha radioIndex do CompilerOptionsDialog
 	Printer       PrinterConfig // configurações de impressão
+
+	Clipboard       string        // clipboard compartilhado entre todas as janelas de edição
+	ClipboardWindow *editorWindow // janela "Show clipboard" aberta (nil se fechada)
+
+	OpenMenu func(index int) // abre a barra de menu (Ctrl+K D em qualquer janela flutuante)
+
+	LastFind    FindParams // últimas opções usadas no diálogo Find (Search menu)
+	FindHistory []string   // histórico de textos buscados (compartilhado com Replace)
+
+	LastReplace       ReplaceParams // últimas opções usadas no diálogo Replace
+	ReplaceNewHistory []string      // histórico do campo "New text" do Replace
+
+	LastGotoLine    GotoLineParams // últimas opções usadas no diálogo Go to Line Number
+	GotoLineHistory []string       // histórico de números de linha
 }
 
 type checkerboardDesktop struct {
@@ -83,23 +98,7 @@ func (a *App) Run(filePath string) error {
 	menuBar.SetTextColor(a.Theme.MenuBarFg)
 	menu := newMenuController(a, menuBar)
 	menu.renderBar()
-
-	name := "Sem Nome"
-	if filePath != "" {
-		name = filePath
-	}
-	editorWin := newEditorWindow(a.Theme, name, 1)
-	editorWin.app = a
-	editorWin.highlightEnabled = true
-	editorWin.onClose = func() {
-		a.Application.Stop()
-	}
-	editorWin.onExitToMenu = func() {
-		menu.open(0) // foca primeiro item do menu (File)
-	}
-	a.Editors = []*editorWindow{editorWin}
-	a.ActiveEditor = 0
-	a.Editor = editorWin.editor
+	a.OpenMenu = menu.open
 
 	// Barra de Status inferior
 	a.StatusBar = tview.NewTextView().
@@ -108,18 +107,25 @@ func (a *App) Run(filePath string) error {
 	a.StatusBar.SetBackgroundColor(a.Theme.StatusBarBg)
 	a.StatusBar.SetTextColor(a.Theme.StatusBarFg)
 
-	// Layout principal
-	pages := tview.NewPages().
-		AddPage("desktop", desktop, true, true)
-
-	pages.AddPage("editor", editorWin, true, true)
-
+	// Layout principal: desktop quadriculado ao fundo; janelas de edição/ajuda/
+	// clipboard flutuam por cima como páginas independentes de a.Pages, então
+	// fechar todas elas apenas revela o desktop — o app continua rodando.
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(menuBar, 1, 0, false).
-		AddItem(pages, 0, 1, true).
+		AddItem(desktop, 0, 1, true).
 		AddItem(a.StatusBar, 1, 0, false)
 
 	a.Pages.AddPage("main", layout, true, true)
+
+	name := "Sem Nome"
+	if filePath != "" {
+		name = filePath
+	}
+	editorWin := a.createEditorWindow(name)
+	a.Editors = []*editorWindow{editorWin}
+	a.ActiveEditor = 0
+	a.Editor = editorWin.editor
+	a.Pages.AddPage(editorPageName(editorWin.number), editorWin, true, true)
 
 	// Captura de Teclas (Hotkeys para Menus)
 	a.Application.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -142,6 +148,18 @@ func (a *App) Run(filePath string) error {
 			showOpenFileDialog(a, "*.BAS",
 				func(path string) { a.openFile(path) },
 				func(path string) { a.openFile(path) })
+			return nil
+		}
+		if event.Key() == tcell.KeyF3 && event.Modifiers()&tcell.ModAlt != 0 {
+			a.closeActiveWindow()
+			return nil
+		}
+		if event.Key() == tcell.KeyF1 && event.Modifiers()&tcell.ModCtrl != 0 {
+			a.showLanguageHelp()
+			return nil
+		}
+		if event.Key() == tcell.KeyCtrlL {
+			a.searchAgain()
 			return nil
 		}
 		if menu.handleHotkey(event) {
@@ -253,6 +271,105 @@ func (a *App) showAbout() {
 	showDialogoOKCentered(dialog.dialogoOK, dlgW, dlgH)
 }
 
+// showFindDialog abre o diálogo "Find" (Search > Find...), pré-preenchido
+// com as opções e o histórico da última busca.
+func (a *App) showFindDialog() {
+	dialog := newFindDialog(a, a.LastFind, a.FindHistory)
+	dialog.onFind = func(params FindParams) {
+		a.LastFind = params
+		a.FindHistory = dialog.field.history
+		a.performFind(params)
+	}
+	showFindDialogCentered(dialog)
+}
+
+// performFind executa uma busca no editor ativo e atualiza a barra de status
+// de acordo com o resultado (encontrado, não encontrado, busca reiniciada ou
+// expressão regular inválida).
+func (a *App) performFind(p FindParams) {
+	ed := a.activeEditor()
+	if ed == nil {
+		return
+	}
+	found, wrapped, err := ed.findNext(p)
+	if a.StatusBar == nil {
+		return
+	}
+	switch {
+	case err != nil:
+		a.StatusBar.SetText(fmt.Sprintf(" [red]Expressão regular inválida: %v[-]", err))
+	case !found:
+		a.StatusBar.SetText(fmt.Sprintf(" [red]Texto não encontrado: %s[-]", p.Text))
+	case wrapped:
+		a.StatusBar.SetText(" Busca reiniciada (fim do texto alcançado).")
+	default:
+		ed.restoreStatusBar()
+	}
+}
+
+// searchAgain implementa Search > Search again: repete a última busca
+// (mesmo texto, mesmas opções, mesmo sentido) a partir da posição atual do
+// cursor. Sem busca anterior, abre o diálogo Find.
+func (a *App) searchAgain() {
+	if strings.TrimSpace(a.LastFind.Text) == "" {
+		a.showFindDialog()
+		return
+	}
+	a.performFind(a.LastFind)
+}
+
+// showGotoLineDialog abre o diálogo "Go to Line Number" (Search > Go to
+// line number...), pré-preenchido com o último número/opção usados.
+func (a *App) showGotoLineDialog() {
+	dialog := newGotoLineDialog(a, a.LastGotoLine, a.GotoLineHistory)
+	dialog.onGoto = func(params GotoLineParams) {
+		a.LastGotoLine = params
+		a.GotoLineHistory = dialog.field.history
+		a.performGotoLine(params)
+	}
+	showGotoLineDialogCentered(dialog)
+}
+
+// performGotoLine move o cursor do editor ativo para a linha pedida — de
+// texto ou do MSX-Basic, conforme params.MSXBasic — e atualiza a barra de
+// status quando a linha não é encontrada.
+func (a *App) performGotoLine(params GotoLineParams) {
+	ed := a.activeEditor()
+	if ed == nil {
+		return
+	}
+	var ok bool
+	if params.MSXBasic {
+		ok = ed.gotoBasicLine(params.Line)
+	} else {
+		ok = ed.gotoTextLine(params.Line)
+	}
+	if a.StatusBar == nil {
+		return
+	}
+	if !ok {
+		a.StatusBar.SetText(fmt.Sprintf(" [red]Linha não encontrada: %d[-]", params.Line))
+		return
+	}
+	ed.restoreStatusBar()
+}
+
+// showReplaceDialog abre o diálogo "Replace" (Search > Replace...),
+// pré-preenchido com a última busca (texto/opções) e o histórico do campo
+// "New text".
+func (a *App) showReplaceDialog() {
+	seed := a.LastReplace
+	seed.FindParams = a.LastFind
+	dialog := newReplaceDialog(a, seed, a.FindHistory, a.ReplaceNewHistory)
+	dialog.onReplace = func(params ReplaceParams) {
+		a.LastReplace = params
+		a.LastFind = params.FindParams
+		a.FindHistory = dialog.findField.history
+		a.ReplaceNewHistory = dialog.newField.history
+	}
+	showReplaceDialogCentered(dialog)
+}
+
 func (a *App) showCompilerInterpreterOptions() {
 	dialog := newCompilerOptionsDialog(a)
 	const dlgW = 72
@@ -337,6 +454,7 @@ func (a *App) openFile(path string) {
 		ed.editor.SetText(string(data), true)
 		ed.isTokenized = false
 	}
+	ed.resetPerFileState()
 	ed.filePath = path
 	ed.fileName = filepath.Base(path)
 	a.Application.SetFocus(ed)
@@ -405,7 +523,7 @@ func (a *App) showHelpWindow() {
 				break
 			}
 		}
-		a.Application.SetFocus(a.Editor)
+		a.focusActiveEditor()
 	}
 
 	// Layout centralizado (mesmo padrão do showDialogoOKCentered)
@@ -421,10 +539,217 @@ func (a *App) showHelpWindow() {
 	a.Application.SetFocus(helpWin)
 }
 
+// showLanguageHelp abre o Help já navegado até o tópico "Reserved Words"
+// (Ctrl+F1 — "Language help"), a referência mais próxima de ajuda contextual
+// sobre a linguagem MSX-BASIC disponível hoje.
+func (a *App) showLanguageHelp() {
+	a.showHelpWindow()
+	if helpWin := a.currentHelpWindow(); helpWin != nil {
+		helpWin.content.NavigateToTopic("reserved_words")
+	}
+}
+
+// closeActiveWindow fecha a janela de edição ativa (Alt+F3), equivalente a
+// clicar no botão [■] dela.
+func (a *App) closeActiveWindow() {
+	ed := a.activeEditor()
+	if ed == nil || ed.onClose == nil {
+		return
+	}
+	ed.onClose()
+}
+
 func (a *App) currentHelpWindow() *helpWindow {
 	if len(a.HelpWindows) == 0 {
 		return nil
 	}
 	return a.HelpWindows[len(a.HelpWindows)-1]
+}
+
+// activeEditor retorna a janela de edição ativa, ou nil se não houver.
+func (a *App) activeEditor() *editorWindow {
+	if len(a.Editors) == 0 || a.ActiveEditor < 0 || a.ActiveEditor >= len(a.Editors) {
+		return nil
+	}
+	return a.Editors[a.ActiveEditor]
+}
+
+// focusActiveEditor devolve o foco para a janela de edição ativa. Se não
+// houver nenhuma (todas foram fechadas), o foco vai para o desktop — o app
+// continua rodando normalmente, pronto para File > New ou File > Open.
+func (a *App) focusActiveEditor() {
+	if ed := a.activeEditor(); ed != nil {
+		a.Application.SetFocus(ed)
+		return
+	}
+	a.Application.SetFocus(a.Pages)
+}
+
+// editorPageName retorna o nome da página usada para uma janela de edição
+// com o ID informado dentro de a.Pages.
+func editorPageName(number int) string {
+	return fmt.Sprintf("editor_%d", number)
+}
+
+// createEditorWindow cria uma nova janela de edição já ligada à aplicação
+// (clipboard compartilhado, atalhos, fechar/ativar), mas ainda não adicionada
+// a a.Pages nem a a.Editors — isso fica a cargo de quem a criar (Run,
+// showNewEditor), que também decide a posição inicial.
+func (a *App) createEditorWindow(name string) *editorWindow {
+	win := newEditorWindow(a.Theme, name, a.getNextWindowID())
+	win.app = a
+	win.highlightEnabled = true
+	win.onClose = func() {
+		a.closeEditorWindow(win)
+	}
+	win.onExitToMenu = func() {
+		if a.OpenMenu != nil {
+			a.OpenMenu(0)
+		}
+	}
+	win.onFocus = func() {
+		for i, ed := range a.Editors {
+			if ed == win {
+				a.ActiveEditor = i
+				return
+			}
+		}
+	}
+	return win
+}
+
+// closeEditorWindow remove uma janela de edição da tela e da lista a.Editors.
+// Fechar a última janela aberta NÃO encerra o programa: o desktop fica visível
+// e o usuário pode continuar usando File > New ou File > Open normalmente.
+func (a *App) closeEditorWindow(win *editorWindow) {
+	a.Pages.RemovePage(editorPageName(win.number))
+	a.releaseWindowID(win.number)
+
+	for i, ed := range a.Editors {
+		if ed == win {
+			a.Editors = append(a.Editors[:i], a.Editors[i+1:]...)
+			break
+		}
+	}
+	if a.ActiveEditor >= len(a.Editors) {
+		a.ActiveEditor = len(a.Editors) - 1
+	}
+	if ed := a.activeEditor(); ed != nil {
+		a.Editor = ed.editor
+	} else {
+		a.Editor = nil
+	}
+	a.focusActiveEditor()
+}
+
+// showNewEditor implementa File > New: cria uma janela de edição em branco,
+// em cascata a partir da janela ativa atual.
+func (a *App) showNewEditor() {
+	from := a.activeEditor()
+
+	win := a.createEditorWindow("Sem Nome")
+	width, height := 0, 0
+	if from != nil {
+		width, height = from.winW, from.winH
+	}
+	x, y, w, h := a.cascadePosition(from, width, height)
+	win.winX, win.winY, win.winW, win.winH = x, y, w, h
+	win.savedX, win.savedY, win.savedW, win.savedH = x, y, w, h
+	win.positioned = true
+
+	a.Editors = append(a.Editors, win)
+	a.ActiveEditor = len(a.Editors) - 1
+
+	a.Pages.AddPage(editorPageName(win.number), win, true, true)
+	a.Application.SetFocus(win)
+}
+
+// cascadePosition calcula a posição/tamanho de uma nova janela flutuante a
+// partir de uma janela de referência ("from"), deslocando-a em cascata e
+// dando a volta quando não há mais espaço na tela. Se width/height forem 0,
+// usa um tamanho que preenche a maior parte da tela.
+func (a *App) cascadePosition(from *editorWindow, width, height int) (x, y, w, h int) {
+	sw, sh := 80, 25
+	if from != nil && from.lastScreenW > 0 && from.lastScreenH > 0 {
+		sw, sh = from.lastScreenW, from.lastScreenH
+	}
+
+	w, h = width, height
+	if w <= 0 {
+		w = sw - 4
+	}
+	if h <= 0 {
+		h = sh - 3
+	}
+	if w > sw-2 {
+		w = sw - 2
+	}
+	if h > sh-2 {
+		h = sh - 2
+	}
+
+	const dx, dy = 3, 2
+	x, y = 2, 1
+	if from != nil {
+		x, y = from.winX+dx, from.winY+dy
+	}
+	if x+w > sw || y+h > sh-1 {
+		x, y = 2, 1
+	}
+	return
+}
+
+// syncClipboardWindow atualiza o conteúdo exibido na janela "Show clipboard"
+// (se aberta) para refletir o clipboard compartilhado atual.
+func (a *App) syncClipboardWindow() {
+	if a.ClipboardWindow == nil {
+		return
+	}
+	if a.ClipboardWindow.editor.GetText() != a.Clipboard {
+		a.ClipboardWindow.editor.SetText(a.Clipboard, true)
+	}
+}
+
+// showClipboardWindow abre (ou foca, se já aberta) a janela especial que
+// exibe e edita o clipboard compartilhado entre todas as janelas de edição.
+func (a *App) showClipboardWindow() {
+	if a.ClipboardWindow != nil {
+		a.Application.SetFocus(a.ClipboardWindow)
+		return
+	}
+
+	win := newEditorWindow(a.Theme, "Clipboard", a.getNextWindowID())
+	win.app = a
+	win.isClipboard = true
+	win.editor.SetText(a.Clipboard, true)
+	win.editor.SetChangedFunc(func() {
+		a.Clipboard = win.editor.GetText()
+	})
+
+	// Janela menor que uma janela de edição normal, em cascata a partir da
+	// janela ativa (ou centralizada, se não houver nenhuma aberta).
+	const clipboardW, clipboardH = 56, 18
+	from := a.activeEditor()
+	x, y, w, h := a.cascadePosition(from, clipboardW, clipboardH)
+	win.winX, win.winY, win.winW, win.winH = x, y, w, h
+	win.savedX, win.savedY, win.savedW, win.savedH = x, y, w, h
+	win.positioned = true
+
+	pageName := fmt.Sprintf("clipboard_%d", win.number)
+	win.onClose = func() {
+		a.Pages.RemovePage(pageName)
+		a.releaseWindowID(win.number)
+		a.ClipboardWindow = nil
+		a.focusActiveEditor()
+	}
+	win.onExitToMenu = func() {
+		if a.OpenMenu != nil {
+			a.OpenMenu(0)
+		}
+	}
+
+	a.ClipboardWindow = win
+	a.Pages.AddPage(pageName, win, true, true)
+	a.Application.SetFocus(win)
 }
 
